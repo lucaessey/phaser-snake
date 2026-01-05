@@ -9,12 +9,12 @@ export class Snake {
         this.tail = this.head;
         this.direction = 'right';
         this.nextDirection = 'right';
-        this.speed = 16;
+        this.speed = 32;
         this.moveTime = 0;
         this.dead = false;
 
-        this.body.push(this.scene.add.image(this.headPosition.x - 16, this.headPosition.y, 'body_horizontal'));
-        this.body.push(this.scene.add.image(this.headPosition.x - 32, this.headPosition.y, 'tail_right'));
+        this.body.push(this.scene.add.image(this.headPosition.x - this.speed, this.headPosition.y, 'body_horizontal'));
+        this.body.push(this.scene.add.image(this.headPosition.x - (2* this.speed), this.headPosition.y, 'tail_right'));
     }
 
     grow() {

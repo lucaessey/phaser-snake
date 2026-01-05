@@ -23,6 +23,7 @@ export class Game extends Scene
         this.load.image('tail_down', 'assets/tail_down.png');
         this.load.image('tail_left', 'assets/tail_left.png');
         this.load.image('tail_right', 'assets/tail_right.png');
+        this.load.image('apple', 'assets/apple.png');
     }
 
     create ()
@@ -40,7 +41,31 @@ export class Game extends Scene
             this.snake.dead = true;
         });
 
+        this.apple = this.physics.add.sprite(0, 0, 'apple');
+        this.spawnApple();
+
+        this.physics.add.overlap(this.snake.getHead(), this.apple, () => {
+            this.eatApple();
+        });
+
         this.cursors = this.input.keyboard.createCursorKeys();
+    }
+
+    spawnApple() {
+        const xMin = 2;
+        const xMax = (this.cameras.main.width / 16) - 2;
+        const yMin = 1;
+        const yMax = Math.floor((this.cameras.main.height - 36) / 16);
+
+        const x = Phaser.Math.Between(xMin, xMax) * 16;
+        const y = Phaser.Math.Between(yMin, yMax) * 16 + 12;
+
+        this.apple.setPosition(x, y);
+    }
+
+    eatApple() {
+        this.snake.grow();
+        this.spawnApple();
     }
 
     update(time) {

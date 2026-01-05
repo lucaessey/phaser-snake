@@ -28,12 +28,24 @@ export class Game extends Scene
 
     create ()
     {
+        this.score = 0;
+        this.scoreText = this.add.text(10, 10, 'Score: 0', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
+
+        this.highScore = parseInt(localStorage.getItem('highScore')) || 0;
+        this.highScoreText = this.add.text(this.cameras.main.width - 20, 10, `High Score: ${this.highScore}`, { 
+            fontFamily: 'Arial', fontSize: 24, color: '#ffffff', align: 'right' 
+        }).setOrigin(1, 0);
+
         this.walls = this.physics.add.staticGroup();
 
-        this.walls.create(0, 0, null).setOrigin(0, 0).setDisplaySize(this.cameras.main.width, 16).refreshBody();
+        // Top wall moved down to y=48 (leaving space for score)
+        this.walls.create(0, 48, null).setOrigin(0, 0).setDisplaySize(this.cameras.main.width, 16).refreshBody();
+        // Bottom wall
         this.walls.create(0, this.cameras.main.height - 16, null).setOrigin(0, 0).setDisplaySize(this.cameras.main.width, 16).refreshBody();
-        this.walls.create(0, 0, null).setOrigin(0, 0).setDisplaySize(16, this.cameras.main.height).refreshBody();
-        this.walls.create(this.cameras.main.width - 16, 0, null).setOrigin(0, 0).setDisplaySize(16, this.cameras.main.height).refreshBody();
+        // Left wall adjusted to start below top wall
+        this.walls.create(0, 48, null).setOrigin(0, 0).setDisplaySize(16, this.cameras.main.height - 48).refreshBody();
+        // Right wall adjusted to start below top wall
+        this.walls.create(this.cameras.main.width - 16, 48, null).setOrigin(0, 0).setDisplaySize(16, this.cameras.main.height - 48).refreshBody();
 
         this.snake = new Snake(this);
 
@@ -52,18 +64,36 @@ export class Game extends Scene
     }
 
     spawnApple() {
-        const xMin = 2;
+        // Grid size is 16
+        // Width: 1024 / 16 = 64 tiles. Walls at 0 and 63. Playable x: 1 to 62.
+        // Height: 768 / 16 = 48 tiles. 
+        // Top wall at y=48 (pixels) -> which is 3 tiles (0, 16, 32 occupied by UI/empty, wall starts at 48?).
+        // Actually, wall is at 48px. 48/16 = 3. So wall occupies row index 3.
+        // Playable area starts at row index 4 (y=64).
+        // Bottom wall at 768-16 = 752. 752/16 = 47. Wall occupies row index 47.
+        // Playable y: 4 to 46.
+
+        const xMin = 1;
         const xMax = (this.cameras.main.width / 16) - 2;
-        const yMin = 1;
-        const yMax = Math.floor((this.cameras.main.height - 36) / 16);
+        const yMin = 4;
+        const yMax = (this.cameras.main.height / 16) - 2;
 
         const x = Phaser.Math.Between(xMin, xMax) * 16;
-        const y = Phaser.Math.Between(yMin, yMax) * 16 + 12;
+        const y = Phaser.Math.Between(yMin, yMax) * 16;
 
         this.apple.setPosition(x, y);
     }
 
     eatApple() {
+        this.score++;
+        this.scoreText.setText('Score: ' + this.score);
+
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            this.highScoreText.setText('High Score: ' + this.highScore);
+            localStorage.setItem('highScore', this.highScore);
+        }
+
         this.snake.grow();
         this.spawnApple();
     }

@@ -61,6 +61,12 @@ export class Snake {
         // Update the direction for the next move
         this.direction = this.nextDirection;
 
+        // Check for collision with self
+        // (after movement, head is at new place, body is at new place)
+        if (this.body.some(part => part.x === this.head.x && part.y === this.head.y)) {
+            this.dead = true;
+        }
+
         // Update body and tail textures
         this.updateBodyTextures();
 

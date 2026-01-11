@@ -1,24 +1,34 @@
 import { Scene } from 'phaser';
 
 export class Snake {
-    constructor(scene) {
+    constructor(scene, tileSize) {
         this.scene = scene;
-        this.headPosition = new Phaser.Geom.Point(400, 300);
+        this.speed = tileSize;
+        // Ensure starting position is grid-aligned
+        const startX = Math.floor(400 / this.speed) * this.speed;
+        const startY = Math.floor(300 / this.speed) * this.speed;
+        this.headPosition = new Phaser.Geom.Point(startX, startY);
         this.body = [];
         this.head = this.scene.physics.add.image(this.headPosition.x, this.headPosition.y, 'head_right');
+        this.head.setDisplaySize(this.speed, this.speed);
         this.tail = this.head;
         this.direction = 'right';
         this.nextDirection = 'right';
-        this.speed = 32;
         this.moveTime = 0;
         this.dead = false;
 
-        this.body.push(this.scene.add.image(this.headPosition.x - this.speed, this.headPosition.y, 'body_horizontal'));
-        this.body.push(this.scene.add.image(this.headPosition.x - (2* this.speed), this.headPosition.y, 'tail_right'));
+        const bodyPart = this.scene.add.image(this.headPosition.x - this.speed, this.headPosition.y, 'body_horizontal');
+        bodyPart.setDisplaySize(this.speed, this.speed);
+        this.body.push(bodyPart);
+
+        const tailPart = this.scene.add.image(this.headPosition.x - (2* this.speed), this.headPosition.y, 'tail_right');
+        tailPart.setDisplaySize(this.speed, this.speed);
+        this.body.push(tailPart);
     }
 
     grow() {
         const newPart = this.scene.add.image(this.tail.x, this.tail.y, 'body_horizontal');
+        newPart.setDisplaySize(this.speed, this.speed);
         this.body.push(newPart);
         this.tail = newPart;
     }

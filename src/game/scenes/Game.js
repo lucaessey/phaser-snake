@@ -94,7 +94,7 @@ export class Game extends Scene
         this.spawnApple();
     }
 
-    update(time) {
+    update(time, delta) {
         if (this.snake.dead) {
             this.scene.start('TitleScreen');
         }
@@ -109,7 +109,7 @@ export class Game extends Scene
             this.snake.changeDirection('down');
         }
 
-        this.snake.update(time);
+        this.snake.update(time, delta);
     }
 }
 

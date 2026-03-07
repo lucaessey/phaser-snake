@@ -26,6 +26,7 @@ export class Game extends Scene
         this.load.image('tail_left', 'assets/tail_left.png');
         this.load.image('tail_right', 'assets/tail_right.png');
         this.load.image('apple', 'assets/apple.png');
+        this.load.image('bannana', 'assets/Bannana.png');
     }
 
     create ()
@@ -71,7 +72,8 @@ export class Game extends Scene
             this.snake.dead = true;
         });
 
-        this.apple = this.physics.add.sprite(0, 0, 'apple');
+        const foodType = localStorage.getItem('foodType') || 'apple';
+        this.apple = this.physics.add.sprite(0, 0, foodType);
         this.apple.setDisplaySize(TILE_SIZE, TILE_SIZE);
         this.spawnApple();
 

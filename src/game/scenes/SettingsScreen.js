@@ -56,7 +56,26 @@ export class SettingsScreen extends Scene
             }
         });
 
-        const backButton = this.add.text(this.cameras.main.width / 2, 500, 'Back', {
+        // Food type setting (Apple or Bannana)
+        let currentFood = localStorage.getItem('foodType') || 'apple';
+
+        const foodLabel = this.add.text(this.cameras.main.width / 2, 400, 'Food Type', {
+            fontFamily: 'Arial', fontSize: 32, color: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        const foodValueText = this.add.text(this.cameras.main.width / 2, 450, currentFood.charAt(0).toUpperCase() + currentFood.slice(1), {
+            fontFamily: 'Arial Black', fontSize: 38, color: '#ffff00',
+            align: 'center'
+        }).setOrigin(0.5).setInteractive();
+
+        foodValueText.on('pointerdown', () => {
+            currentFood = currentFood === 'apple' ? 'bannana' : 'apple';
+            foodValueText.setText(currentFood.charAt(0).toUpperCase() + currentFood.slice(1));
+            localStorage.setItem('foodType', currentFood);
+        });
+
+        const backButton = this.add.text(this.cameras.main.width / 2, 550, 'Back', {
             fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
             stroke: '#000000', strokeThickness: 6,
             align: 'center'

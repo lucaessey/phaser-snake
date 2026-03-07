@@ -9,7 +9,7 @@ export class TitleScreen extends Scene
 
     preload ()
     {
-        this.load.image('title_bg', 'assets/istockphoto-2174107271-612x612.jpg');
+        this.load.image('title_bg', 'assets/preview_937 (1).png');
     }
 
     create ()
@@ -34,5 +34,14 @@ export class TitleScreen extends Scene
             stroke: '#ffffff', strokeThickness: 4,
             align: 'right'
         }).setOrigin(1, 0);
+
+        const settingsBtn = this.add.text(20, 20, '⚙️', {
+            fontFamily: 'Arial', fontSize: 48, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0, 0).setInteractive();
+
+        settingsBtn.on('pointerdown', () => {
+            this.scene.start('SettingsScreen');
+        });
     }
 }

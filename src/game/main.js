@@ -1,5 +1,6 @@
 import { Game as MainGame } from './scenes/Game';
 import { TitleScreen } from './scenes/TitleScreen';
+import { SettingsScreen } from './scenes/SettingsScreen';
 import { AUTO, Scale, Game } from 'phaser';
 
 // Find out more information about the Game Config at:
@@ -21,6 +22,7 @@ const config = {
     },
     scene: [
         TitleScreen,
+        SettingsScreen,
         MainGame
     ]
 };

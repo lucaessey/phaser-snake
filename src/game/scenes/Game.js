@@ -1,6 +1,8 @@
 import { Scene } from 'phaser';
 import { Snake } from '../Snake';
 
+const TILE_SIZE = 32;
+
 export class Game extends Scene
 {
     constructor ()
@@ -24,6 +26,10 @@ export class Game extends Scene
         this.load.image('tail_left', 'assets/tail_left.png');
         this.load.image('tail_right', 'assets/tail_right.png');
         this.load.image('apple', 'assets/apple.png');
+        this.load.image('banana', 'assets/Banana.png');
+        this.load.image('eggplant', 'assets/Eggplant.png');
+        this.load.image('jerry', 'assets/Jerry.png');
+        this.load.image('sushi', 'assets/Sushi.png');
     }
 
     create ()
@@ -36,24 +42,42 @@ export class Game extends Scene
             fontFamily: 'Arial', fontSize: 24, color: '#ffffff', align: 'right' 
         }).setOrigin(1, 0);
 
+        const graphics = this.add.graphics();
+        const lightGreen = 0x4caf50;
+        const darkGreen = 0x388e3c;
+        
+        const cols = this.cameras.main.width / TILE_SIZE;
+        const rows = this.cameras.main.height / TILE_SIZE;
+        
+        for (let row = 3; row < rows - 1; row++) {
+            for (let col = 1; col < cols - 1; col++) {
+                graphics.fillStyle((row + col) % 2 === 0 ? lightGreen : darkGreen, 1);
+                graphics.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
         this.walls = this.physics.add.staticGroup();
 
-        // Top wall moved down to y=48 (leaving space for score)
-        this.walls.create(0, 48, null).setOrigin(0, 0).setDisplaySize(this.cameras.main.width, 16).refreshBody();
-        // Bottom wall
-        this.walls.create(0, this.cameras.main.height - 16, null).setOrigin(0, 0).setDisplaySize(this.cameras.main.width, 16).refreshBody();
-        // Left wall adjusted to start below top wall
-        this.walls.create(0, 48, null).setOrigin(0, 0).setDisplaySize(16, this.cameras.main.height - 48).refreshBody();
-        // Right wall adjusted to start below top wall
-        this.walls.create(this.cameras.main.width - 16, 48, null).setOrigin(0, 0).setDisplaySize(16, this.cameras.main.height - 48).refreshBody();
+        const topWallY = 2 * TILE_SIZE;
 
-        this.snake = new Snake(this);
+        // Top wall
+        this.walls.create(0, topWallY, null).setOrigin(0, 0).setDisplaySize(this.cameras.main.width, TILE_SIZE).refreshBody();
+        // Bottom wall
+        this.walls.create(0, this.cameras.main.height - TILE_SIZE, null).setOrigin(0, 0).setDisplaySize(this.cameras.main.width, TILE_SIZE).refreshBody();
+        // Left wall
+        this.walls.create(0, topWallY, null).setOrigin(0, 0).setDisplaySize(TILE_SIZE, this.cameras.main.height - topWallY).refreshBody();
+        // Right wall
+        this.walls.create(this.cameras.main.width - TILE_SIZE, topWallY, null).setOrigin(0, 0).setDisplaySize(TILE_SIZE, this.cameras.main.height - topWallY).refreshBody();
+
+        this.snake = new Snake(this, TILE_SIZE);
 
         this.physics.add.collider(this.snake.getHead(), this.walls, () => {
             this.snake.dead = true;
         });
 
-        this.apple = this.physics.add.sprite(0, 0, 'apple');
+        const foodType = localStorage.getItem('foodType') || 'apple';
+        this.apple = this.physics.add.sprite(0, 0, foodType);
+        this.apple.setDisplaySize(TILE_SIZE, TILE_SIZE);
         this.spawnApple();
 
         this.physics.add.overlap(this.snake.getHead(), this.apple, () => {
@@ -64,22 +88,13 @@ export class Game extends Scene
     }
 
     spawnApple() {
-        // Grid size is 16
-        // Width: 1024 / 16 = 64 tiles. Walls at 0 and 63. Playable x: 1 to 62.
-        // Height: 768 / 16 = 48 tiles. 
-        // Top wall at y=48 (pixels) -> which is 3 tiles (0, 16, 32 occupied by UI/empty, wall starts at 48?).
-        // Actually, wall is at 48px. 48/16 = 3. So wall occupies row index 3.
-        // Playable area starts at row index 4 (y=64).
-        // Bottom wall at 768-16 = 752. 752/16 = 47. Wall occupies row index 47.
-        // Playable y: 4 to 46.
-
         const xMin = 1;
-        const xMax = (this.cameras.main.width / 16) - 2;
-        const yMin = 4;
-        const yMax = (this.cameras.main.height / 16) - 2;
+        const xMax = (this.cameras.main.width / TILE_SIZE) - 2;
+        const yMin = 3;
+        const yMax = (this.cameras.main.height / TILE_SIZE) - 2;
 
-        const x = Phaser.Math.Between(xMin, xMax) * 16;
-        const y = Phaser.Math.Between(yMin, yMax) * 16;
+        const x = Phaser.Math.Between(xMin, xMax) * TILE_SIZE + TILE_SIZE / 2;
+        const y = Phaser.Math.Between(yMin, yMax) * TILE_SIZE + TILE_SIZE / 2;
 
         this.apple.setPosition(x, y);
     }
@@ -98,7 +113,7 @@ export class Game extends Scene
         this.spawnApple();
     }
 
-    update(time) {
+    update(time, delta) {
         if (this.snake.dead) {
             this.scene.start('TitleScreen');
         }
@@ -113,7 +128,7 @@ export class Game extends Scene
             this.snake.changeDirection('down');
         }
 
-        this.snake.update(time);
+        this.snake.update(time, delta);
     }
 }
 

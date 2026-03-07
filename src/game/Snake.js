@@ -4,7 +4,9 @@ export class Snake {
     constructor(scene, tileSize) {
         this.scene = scene;
         this.tileSize = tileSize;
-        this.speed = 160; // Pixels per second (5 tiles/sec)
+        
+        const speedInTiles = parseInt(localStorage.getItem('snakeSpeed')) || 5;
+        this.speed = speedInTiles * this.tileSize; // Pixels per second
         
         // Ensure starting position is grid-aligned
         const startX = Math.floor(400 / this.tileSize) * this.tileSize + this.tileSize / 2;

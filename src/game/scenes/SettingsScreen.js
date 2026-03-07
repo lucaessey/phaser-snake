@@ -56,9 +56,9 @@ export class SettingsScreen extends Scene
             }
         });
 
-        // Food type setting (Apple, Bannana, Eggplant, Jarry, or Sushi)
+        // Food type setting (Apple, Banana, Eggplant, Jerry, or Sushi)
         let currentFood = localStorage.getItem('foodType') || 'apple';
-        const foodOptions = ['apple', 'bannana', 'eggplant', 'jarry', 'sushi'];
+        const foodOptions = ['apple', 'banana', 'eggplant', 'jerry', 'sushi'];
 
         const foodLabel = this.add.text(this.cameras.main.width / 2, 400, 'Food Type', {
             fontFamily: 'Arial', fontSize: 32, color: '#ffffff',

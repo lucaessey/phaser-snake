@@ -26,9 +26,9 @@ export class Game extends Scene
         this.load.image('tail_left', 'assets/tail_left.png');
         this.load.image('tail_right', 'assets/tail_right.png');
         this.load.image('apple', 'assets/apple.png');
-        this.load.image('bannana', 'assets/Bannana.png');
+        this.load.image('banana', 'assets/Banana.png');
         this.load.image('eggplant', 'assets/Eggplant.png');
-        this.load.image('jarry', 'assets/Jarry.png');
+        this.load.image('jerry', 'assets/Jerry.png');
         this.load.image('sushi', 'assets/Sushi.png');
     }
 

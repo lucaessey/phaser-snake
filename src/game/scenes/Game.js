@@ -38,6 +38,20 @@ export class Game extends Scene
             fontFamily: 'Arial', fontSize: 24, color: '#ffffff', align: 'right' 
         }).setOrigin(1, 0);
 
+        const graphics = this.add.graphics();
+        const lightGreen = 0x4caf50;
+        const darkGreen = 0x388e3c;
+        
+        const cols = this.cameras.main.width / TILE_SIZE;
+        const rows = this.cameras.main.height / TILE_SIZE;
+        
+        for (let row = 3; row < rows - 1; row++) {
+            for (let col = 1; col < cols - 1; col++) {
+                graphics.fillStyle((row + col) % 2 === 0 ? lightGreen : darkGreen, 1);
+                graphics.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+
         this.walls = this.physics.add.staticGroup();
 
         const topWallY = 2 * TILE_SIZE;

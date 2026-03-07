@@ -74,8 +74,8 @@ export class Game extends Scene
         const yMin = 3;
         const yMax = (this.cameras.main.height / TILE_SIZE) - 2;
 
-        const x = Phaser.Math.Between(xMin, xMax) * TILE_SIZE;
-        const y = Phaser.Math.Between(yMin, yMax) * TILE_SIZE;
+        const x = Phaser.Math.Between(xMin, xMax) * TILE_SIZE + TILE_SIZE / 2;
+        const y = Phaser.Math.Between(yMin, yMax) * TILE_SIZE + TILE_SIZE / 2;
 
         this.apple.setPosition(x, y);
     }

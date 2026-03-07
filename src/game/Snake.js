@@ -7,8 +7,8 @@ export class Snake {
         this.speed = 160; // Pixels per second (5 tiles/sec)
         
         // Ensure starting position is grid-aligned
-        const startX = Math.floor(400 / this.tileSize) * this.tileSize;
-        const startY = Math.floor(300 / this.tileSize) * this.tileSize;
+        const startX = Math.floor(400 / this.tileSize) * this.tileSize + this.tileSize / 2;
+        const startY = Math.floor(300 / this.tileSize) * this.tileSize + this.tileSize / 2;
         
         // Logical state (Grid Coordinates)
         // Index 0 is Head. Index 1 is Body[0], etc.
@@ -96,11 +96,6 @@ export class Snake {
         // 1. Update Direction
         this.direction = this.nextDirection;
 
-        // 2. Check for Turn and Spawn Corner
-        if (this.direction !== oldDirection) {
-            this.spawnCorner(oldHeadX, oldHeadY, oldDirection, this.direction);
-        }
-
         // 3. Shift Body Segments
         // Start from the tail and move each segment to the position of the one before it
         for (let i = this.gridCoords.length - 1; i > 0; i--) {
@@ -109,7 +104,7 @@ export class Snake {
         }
 
         // 4. Move Head
-        switch (this.direction) {
+        switch (oldDirection) {
             case 'up':
                 this.gridCoords[0].y -= this.tileSize;
                 break;
@@ -122,6 +117,11 @@ export class Snake {
             case 'right':
                 this.gridCoords[0].x += this.tileSize;
                 break;
+        }
+
+        // 2. Check for Turn and Spawn Corner
+        if (this.direction !== oldDirection) {
+            this.spawnCorner(this.gridCoords[0].x, this.gridCoords[0].y, oldDirection, this.direction);
         }
 
         // 5. Clean up Corners

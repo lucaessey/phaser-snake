@@ -9,7 +9,7 @@ export class TitleScreen extends Scene
 
     preload ()
     {
-        this.load.image('title_bg', 'assets/istockphoto-2174107271-612x612.jpg');
+        this.load.image('title_bg', 'assets/preview_937 (1).png');
     }
 
     create ()

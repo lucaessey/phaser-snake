@@ -56,8 +56,9 @@ export class SettingsScreen extends Scene
             }
         });
 
-        // Food type setting (Apple or Bannana)
+        // Food type setting (Apple, Bannana, Eggplant, Jarry, or Sushi)
         let currentFood = localStorage.getItem('foodType') || 'apple';
+        const foodOptions = ['apple', 'bannana', 'eggplant', 'jarry', 'sushi'];
 
         const foodLabel = this.add.text(this.cameras.main.width / 2, 400, 'Food Type', {
             fontFamily: 'Arial', fontSize: 32, color: '#ffffff',
@@ -70,7 +71,9 @@ export class SettingsScreen extends Scene
         }).setOrigin(0.5).setInteractive();
 
         foodValueText.on('pointerdown', () => {
-            currentFood = currentFood === 'apple' ? 'bannana' : 'apple';
+            let currentIndex = foodOptions.indexOf(currentFood);
+            currentIndex = (currentIndex + 1) % foodOptions.length;
+            currentFood = foodOptions[currentIndex];
             foodValueText.setText(currentFood.charAt(0).toUpperCase() + currentFood.slice(1));
             localStorage.setItem('foodType', currentFood);
         });

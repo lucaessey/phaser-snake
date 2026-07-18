@@ -3,17 +3,20 @@ import { Snake, SNAKE_COLORS } from '../Snake';
 import { chooseRivalDirection, RIVAL_DIFFICULTY } from '../rivalAI';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '../storage';
 import { getHighScore, saveHighScore } from '../highscores';
+import { currentLayout } from '../layout';
+import { swipeToDirection } from '../input';
 
-// Grid tile size (in pixels). The canvas is a fixed 1024x768; a bigger tile
-// means fewer, larger cells (coarser grid) and a smaller tile means more,
-// smaller cells (finer grid). Set per-game from the saved setting in create().
+// Grid tile size (in pixels). Computed each game from the device size and the
+// chosen grid density (see layout.js) so the grid fills any screen cleanly.
 let TILE_SIZE = 32;
 
-// Selectable grid sizes. Every tile divides 1024x768 evenly (no partial cells).
+// Selectable grid densities. 'auto' adapts to the device (chunkier on phones);
+// the named sizes are relative densities. The pixel tile is derived per screen.
 export const GRID_SIZES = [
-    { tile: 64, name: 'Small' },   // 16 x 12 cells
-    { tile: 32, name: 'Medium' },  // 32 x 24 cells (default)
-    { tile: 16, name: 'Large' }    // 64 x 48 cells
+    { id: 'auto', name: 'Auto' },
+    { id: 'small', name: 'Small' },
+    { id: 'medium', name: 'Medium' },
+    { id: 'large', name: 'Large' }
 ];
 
 // Selectable snake skins. 'classic' uses the loaded PNG sprites; other skins
@@ -88,10 +91,13 @@ export class Game extends Scene
 
     create ()
     {
-        // --- Grid size --- must be set before anything reads TILE_SIZE.
-        const validTiles = GRID_SIZES.map(g => g.tile);
-        const storedTile = parseInt(safeGetItem('gridTileSize'));
-        TILE_SIZE = validTiles.includes(storedTile) ? storedTile : 32;
+        // --- Responsive grid --- size the canvas to the device and derive the
+        // tile size, before anything reads TILE_SIZE.
+        const layout = currentLayout();
+        if (this.scale.width !== layout.width || this.scale.height !== layout.height) {
+            this.scale.setGameSize(layout.width, layout.height);
+        }
+        TILE_SIZE = layout.tile;
 
         // --- Feature flags (one place; each independently toggleable) ---
         // Default ON; disabled only when explicitly stored as 'false'.
@@ -161,12 +167,17 @@ export class Game extends Scene
         this.walls.create(this.cameras.main.width - TILE_SIZE, topWallY, null).setOrigin(0, 0).setDisplaySize(TILE_SIZE, this.cameras.main.height - topWallY).refreshBody();
 
         // The player fires the single game tick that drives everything else.
+        // Start near the middle of the playfield so it fits any grid size.
         if (this.playerSkin !== 'classic') {
             this.createSkinTextures(this.playerSkin);
         }
+        const pb = this.playBounds();
         this.snake = new Snake(this, TILE_SIZE, {
             onTick: () => this.onGameTick(),
-            skin: this.playerSkin
+            skin: this.playerSkin,
+            startCol: Math.floor((pb.xMin + pb.xMax) / 2),
+            startRow: Math.floor((pb.yMin + pb.yMax) / 2),
+            direction: 'right'
         });
 
         this.physics.add.collider(this.snake.getHead(), this.walls, () => {
@@ -193,6 +204,24 @@ export class Game extends Scene
         }
 
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.setupSwipeInput();
+    }
+
+    // Touch/mouse swipe -> change direction (works alongside the keyboard).
+    setupSwipeInput() {
+        // Threshold scales a little with tile size so it feels right on any grid.
+        const minSwipe = Math.max(20, TILE_SIZE * 0.6);
+        this.input.on('pointerdown', (p) => {
+            this.swipeStart = { x: p.x, y: p.y };
+        });
+        this.input.on('pointerup', (p) => {
+            if (!this.swipeStart) return;
+            const dir = swipeToDirection(p.x - this.swipeStart.x, p.y - this.swipeStart.y, minSwipe);
+            this.swipeStart = null;
+            if (dir && this.snake && !this.snake.dead) {
+                this.snake.changeDirection(dir);
+            }
+        });
     }
 
     drawBoard(colorA, colorB) {
@@ -427,14 +456,15 @@ export class Game extends Scene
     // each distinct configuration keeps its own high score. Every gameplay
     // setting participates, including snake speed.
     buildConfig() {
-        const gridEntry = GRID_SIZES.find(g => g.tile === TILE_SIZE);
-        const gridName = gridEntry ? gridEntry.name : `${TILE_SIZE}px`;
+        const gridId = safeGetItem('gridSize') || 'auto';
+        const gridEntry = GRID_SIZES.find(g => g.id === gridId) || GRID_SIZES[0];
+        const gridName = gridEntry.name;
         const speed = parseInt(safeGetItem('snakeSpeed')) || 5;
         const ai = this.rivalEnabled;
         const diffName = (RIVAL_DIFFICULTY[this.rivalDifficultyKey] || {}).name || this.rivalDifficultyKey;
 
         const key = [
-            `grid:${TILE_SIZE}`,
+            `grid:${gridId}`,
             `speed:${speed}`,
             `ai:${ai ? this.rivalDifficultyKey : 'off'}`,
             `ghost:${this.ghostEnabled ? 1 : 0}`,
@@ -867,9 +897,12 @@ export class Game extends Scene
         }
         try {
             const data = JSON.parse(raw);
-            // Discard on a version mismatch, bad shape, or a different grid size
-            // (cells recorded on another grid don't line up with this one).
-            if (!data || data.v !== GHOST_VERSION || !Array.isArray(data.frames) || data.tile !== TILE_SIZE) {
+            // Discard on a version mismatch, bad shape, or a different grid
+            // (cells recorded on another grid size/shape don't line up here).
+            const cols = Math.round(this.cameras.main.width / TILE_SIZE);
+            const rows = Math.round(this.cameras.main.height / TILE_SIZE);
+            if (!data || data.v !== GHOST_VERSION || !Array.isArray(data.frames) ||
+                data.tile !== TILE_SIZE || data.cols !== cols || data.rows !== rows) {
                 return null;
             }
             return data.frames;
@@ -944,7 +977,9 @@ export class Game extends Scene
 
     saveGhostIfBest() {
         if (this.score > this.initialHighScore && this.ghostRecording.length > 0) {
-            const data = JSON.stringify({ v: GHOST_VERSION, tile: TILE_SIZE, score: this.score, frames: this.ghostRecording });
+            const cols = Math.round(this.cameras.main.width / TILE_SIZE);
+            const rows = Math.round(this.cameras.main.height / TILE_SIZE);
+            const data = JSON.stringify({ v: GHOST_VERSION, tile: TILE_SIZE, cols, rows, score: this.score, frames: this.ghostRecording });
             if (!safeSetItem(GHOST_KEY, data)) {
                 console.warn('Ghost: could not save best-run recording (storage unavailable or full).');
             }

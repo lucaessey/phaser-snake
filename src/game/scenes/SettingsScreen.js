@@ -15,195 +15,155 @@ export class SettingsScreen extends Scene
     create ()
     {
         const w = this.cameras.main.width;
+        const h = this.cameras.main.height;
         const cx = w / 2;
-        const cxL = Math.round(w * 0.27);   // left column (gameplay)
-        const cxR = Math.round(w * 0.72);   // right column (opponent & modes)
+        const portrait = h >= w;          // phones (portrait) get a single column
+        this.fs = portrait ? 20 : 22;     // control font size
 
-        this.add.rectangle(0, 0, w, this.cameras.main.height, 0x000000, 0.85).setOrigin(0, 0);
+        this.add.rectangle(0, 0, w, h, 0x000000, 0.9).setOrigin(0, 0);
 
-        this.add.text(cx, 40, 'Settings', {
-            fontFamily: 'Arial Black', fontSize: 40, color: '#ffffff', align: 'center'
+        const titleY = Math.round(h * 0.055) + 18;
+        this.add.text(cx, titleY, 'Settings', {
+            fontFamily: 'Arial Black', fontSize: portrait ? 30 : 40, color: '#ffffff'
         }).setOrigin(0.5);
 
-        // ===================== Left column: gameplay =====================
+        const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+        const css = (t) => '#' + t.toString(16).padStart(6, '0');
 
-        // --- Snake speed (1 to 20 tiles per second) ---
-        let currentSpeed = parseInt(safeGetItem('snakeSpeed')) || 5;
+        // ---- Each control is a single tappable line, laid out below ----
+        const controls = [];
 
-        this.add.text(cxL, 110, 'Snake Speed (Tiles/sec)', {
-            fontFamily: 'Arial', fontSize: 22, color: '#ffffff', align: 'center'
-        }).setOrigin(0.5);
+        controls.push((x, y) => this.makeStepper(x, y, 'Speed', 'snakeSpeed', 5, 1, 20));
 
-        const speedValueText = this.add.text(cxL, 148, currentSpeed.toString(), {
-            fontFamily: 'Arial Black', fontSize: 36, color: '#ffff00', align: 'center'
-        }).setOrigin(0.5);
+        const foods = ['apple', 'banana', 'eggplant', 'jerry', 'sushi'];
+        controls.push((x, y) => this.makeCycle(x, y, 'Food',
+            () => cap(safeGetItem('foodType') || 'apple'),
+            () => {
+                const cur = safeGetItem('foodType') || 'apple';
+                const n = foods[(foods.indexOf(cur) + 1) % foods.length];
+                safeSetItem('foodType', n);
+                return cap(n);
+            }));
 
-        this.add.text(cxL - 90, 148, '<', {
-            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff', align: 'center'
-        }).setOrigin(0.5).setInteractive().on('pointerdown', () => {
-            if (currentSpeed > 1) {
-                currentSpeed--;
-                speedValueText.setText(currentSpeed.toString());
-                safeSetItem('snakeSpeed', currentSpeed);
-            }
+        controls.push((x, y) => {
+            let i = parseInt(safeGetItem('snakeColorIndex')) || 0;
+            this.makeCycle(x, y, 'Color',
+                () => SNAKE_COLORS[i].name,
+                () => { i = (i + 1) % SNAKE_COLORS.length; safeSetItem('snakeColorIndex', i); return SNAKE_COLORS[i].name; },
+                () => css(SNAKE_COLORS[i].tint));
         });
 
-        this.add.text(cxL + 90, 148, '>', {
-            fontFamily: 'Arial Black', fontSize: 36, color: '#ffffff', align: 'center'
-        }).setOrigin(0.5).setInteractive().on('pointerdown', () => {
-            if (currentSpeed < 20) {
-                currentSpeed++;
-                speedValueText.setText(currentSpeed.toString());
-                safeSetItem('snakeSpeed', currentSpeed);
-            }
+        controls.push((x, y) => {
+            let gi = Math.max(0, GRID_SIZES.findIndex(g => g.id === (safeGetItem('gridSize') || 'auto')));
+            this.makeCycle(x, y, 'Grid',
+                () => GRID_SIZES[gi].name,
+                () => { gi = (gi + 1) % GRID_SIZES.length; safeSetItem('gridSize', GRID_SIZES[gi].id); return GRID_SIZES[gi].name; });
         });
 
-        // --- Food type (tap to cycle) ---
-        let currentFood = safeGetItem('foodType') || 'apple';
-        const foodOptions = ['apple', 'banana', 'eggplant', 'jerry', 'sushi'];
-        const label = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+        controls.push((x, y) => {
+            let si = Math.max(0, SKINS.findIndex(s => s.id === safeGetItem('snakeSkin')));
+            this.makeCycle(x, y, 'Skin',
+                () => SKINS[si].name,
+                () => { si = (si + 1) % SKINS.length; safeSetItem('snakeSkin', SKINS[si].id); return SKINS[si].name; });
+        });
 
-        this.add.text(cxL, 210, 'Food Type', {
-            fontFamily: 'Arial', fontSize: 22, color: '#ffffff', align: 'center'
-        }).setOrigin(0.5);
+        controls.push((x, y) => this.makeToggle(x, y, 'AI Opponent', 'rivalEnabled', true));
 
-        const foodValueText = this.add.text(cxL, 245, label(currentFood), {
-            fontFamily: 'Arial Black', fontSize: 30, color: '#ffff00', align: 'center'
+        controls.push((x, y) => {
+            let di = Math.max(0, RIVAL_DIFFICULTY_ORDER.indexOf(safeGetItem('rivalDifficulty') || 'medium'));
+            this.makeCycle(x, y, 'Difficulty',
+                () => RIVAL_DIFFICULTY[RIVAL_DIFFICULTY_ORDER[di]].name,
+                () => { di = (di + 1) % RIVAL_DIFFICULTY_ORDER.length; safeSetItem('rivalDifficulty', RIVAL_DIFFICULTY_ORDER[di]); return RIVAL_DIFFICULTY[RIVAL_DIFFICULTY_ORDER[di]].name; });
+        });
+
+        controls.push((x, y) => this.makeToggle(x, y, 'Ghost', 'ghostEnabled', true));
+        controls.push((x, y) => this.makeToggle(x, y, 'Spikes', 'modeSpikes', false));
+        controls.push((x, y) => this.makeToggle(x, y, 'Teleport', 'modeTeleport', false));
+        controls.push((x, y) => this.makeToggle(x, y, 'Color Shuffle', 'modeColorShuffle', false));
+
+        // ---- Flow the controls into 1 (portrait) or 2 (landscape) columns ----
+        const numCols = portrait ? 1 : 2;
+        const top = titleY + (portrait ? 34 : 46);
+        const bottom = h - (portrait ? 128 : 104);
+        const perCol = Math.ceil(controls.length / numCols);
+        const rowH = Math.min(portrait ? 52 : 54, (bottom - top) / perCol);
+        controls.forEach((build, idx) => {
+            const col = Math.floor(idx / perCol);
+            const rowInCol = idx % perCol;
+            const x = numCols === 1 ? cx : (col === 0 ? Math.round(w * 0.27) : Math.round(w * 0.73));
+            const y = Math.round(top + rowInCol * rowH + rowH / 2);
+            build(x, y);
+        });
+
+        // ---- Clear + Back ----
+        const clearY = h - (portrait ? 86 : 66);
+        const backY = h - (portrait ? 38 : 30);
+
+        const clearBtn = this.add.text(cx, clearY, 'Clear High Scores', {
+            fontFamily: 'Arial Black', fontSize: portrait ? 20 : 24, color: '#ff8888',
+            stroke: '#000000', strokeThickness: 4
         }).setOrigin(0.5).setInteractive();
-
-        foodValueText.on('pointerdown', () => {
-            const idx = (foodOptions.indexOf(currentFood) + 1) % foodOptions.length;
-            currentFood = foodOptions[idx];
-            foodValueText.setText(label(currentFood));
-            safeSetItem('foodType', currentFood);
-        });
-
-        // --- Snake color (tap to cycle) ---
-        let colorIndex = parseInt(safeGetItem('snakeColorIndex')) || 0;
-        const cssColor = (tint) => '#' + tint.toString(16).padStart(6, '0');
-
-        this.add.text(cxL, 305, 'Snake Color', {
-            fontFamily: 'Arial', fontSize: 22, color: '#ffffff', align: 'center'
-        }).setOrigin(0.5);
-
-        const colorValueText = this.add.text(cxL, 340, SNAKE_COLORS[colorIndex].name, {
-            fontFamily: 'Arial Black', fontSize: 30, color: cssColor(SNAKE_COLORS[colorIndex].tint), align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
-        colorValueText.on('pointerdown', () => {
-            colorIndex = (colorIndex + 1) % SNAKE_COLORS.length;
-            colorValueText.setText(SNAKE_COLORS[colorIndex].name);
-            colorValueText.setColor(cssColor(SNAKE_COLORS[colorIndex].tint));
-            safeSetItem('snakeColorIndex', colorIndex);
-        });
-
-        // --- Grid size (tap to cycle) ---
-        let gridIdx = GRID_SIZES.findIndex(g => g.tile === parseInt(safeGetItem('gridTileSize')));
-        if (gridIdx < 0) gridIdx = GRID_SIZES.findIndex(g => g.tile === 32);
-
-        this.add.text(cxL, 395, 'Grid Size', {
-            fontFamily: 'Arial', fontSize: 22, color: '#ffffff', align: 'center'
-        }).setOrigin(0.5);
-
-        const gridValueText = this.add.text(cxL, 430, GRID_SIZES[gridIdx].name, {
-            fontFamily: 'Arial Black', fontSize: 30, color: '#66f0e0', align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
-        gridValueText.on('pointerdown', () => {
-            gridIdx = (gridIdx + 1) % GRID_SIZES.length;
-            gridValueText.setText(GRID_SIZES[gridIdx].name);
-            safeSetItem('gridTileSize', GRID_SIZES[gridIdx].tile);
-        });
-
-        // ================= Right column: opponent & modes =================
-
-        this.makeToggle(cxR, 112, 'AI Opponent', 'rivalEnabled', true);
-
-        // --- AI difficulty (tap to cycle) ---
-        let diffKey = safeGetItem('rivalDifficulty') || 'medium';
-        if (!RIVAL_DIFFICULTY[diffKey]) diffKey = 'medium';
-
-        const diffText = this.add.text(cxR, 156, 'Difficulty: ' + RIVAL_DIFFICULTY[diffKey].name, {
-            fontFamily: 'Arial Black', fontSize: 26, color: '#ffcc66', align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
-        diffText.on('pointerdown', () => {
-            const order = RIVAL_DIFFICULTY_ORDER;
-            diffKey = order[(order.indexOf(diffKey) + 1) % order.length];
-            diffText.setText('Difficulty: ' + RIVAL_DIFFICULTY[diffKey].name);
-            safeSetItem('rivalDifficulty', diffKey);
-        });
-
-        this.makeToggle(cxR, 208, 'Ghost (Best Run)', 'ghostEnabled', true);
-
-        // --- Modes ---
-        this.add.text(cxR, 262, 'Modes', {
-            fontFamily: 'Arial', fontSize: 22, color: '#aaaaaa', align: 'center'
-        }).setOrigin(0.5);
-
-        this.makeToggle(cxR, 300, 'Spikes', 'modeSpikes', false);
-        this.makeToggle(cxR, 338, 'Teleport on Eat', 'modeTeleport', false);
-        this.makeToggle(cxR, 376, 'Color Shuffle', 'modeColorShuffle', false);
-
-        // --- Snake skin (tap to cycle) ---
-        let skinIdx = SKINS.findIndex(s => s.id === safeGetItem('snakeSkin'));
-        if (skinIdx < 0) skinIdx = 0;
-
-        this.add.text(cxR, 410, 'Skin', {
-            fontFamily: 'Arial', fontSize: 20, color: '#aaaaaa', align: 'center'
-        }).setOrigin(0.5);
-
-        const skinValue = this.add.text(cxR, 440, SKINS[skinIdx].name, {
-            fontFamily: 'Arial Black', fontSize: 22, color: '#d2a75e', align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
-        skinValue.on('pointerdown', () => {
-            skinIdx = (skinIdx + 1) % SKINS.length;
-            skinValue.setText(SKINS[skinIdx].name);
-            safeSetItem('snakeSkin', SKINS[skinIdx].id);
-        });
-
-        // ===================== Bottom: data + back =====================
-
-        const clearBtn = this.add.text(cx, 470, 'Clear High Scores', {
-            fontFamily: 'Arial Black', fontSize: 26, color: '#ff8888',
-            stroke: '#000000', strokeThickness: 4, align: 'center'
-        }).setOrigin(0.5).setInteractive();
-
         clearBtn.on('pointerdown', () => {
-            clearHighScores();            // all per-setup high scores
-            safeRemoveItem('highScore');  // legacy single-score key
-            safeRemoveItem('snakeGhost'); // best-run ghost recording
+            clearHighScores();
+            safeRemoveItem('highScore');
+            safeRemoveItem('snakeGhost');
             clearBtn.setText('Cleared ✓');
             this.time.delayedCall(1200, () => clearBtn.setText('Clear High Scores'));
         });
 
-        this.add.text(cx, 560, 'Back', {
-            fontFamily: 'Arial Black', fontSize: 34, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 6, align: 'center'
-        }).setOrigin(0.5).setInteractive().on('pointerdown', () => {
-            this.scene.start('TitleScreen');
-        });
+        this.add.text(cx, backY, 'Back', {
+            fontFamily: 'Arial Black', fontSize: portrait ? 28 : 34, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 6
+        }).setOrigin(0.5).setInteractive().on('pointerdown', () => this.scene.start('TitleScreen'));
     }
 
-    // On/off toggle bound to a localStorage key. defaultOn controls the value
-    // shown when the key has never been set.
-    makeToggle(x, y, label, storageKey, defaultOn) {
-        const stored = safeGetItem(storageKey);
+    makeToggle(x, y, label, key, defaultOn) {
+        const stored = safeGetItem(key);
         let on = stored === null ? !!defaultOn : stored === 'true';
-
-        const text = this.add.text(x, y, `${label}: ${on ? 'ON' : 'OFF'}`, {
-            fontFamily: 'Arial Black', fontSize: 26, align: 'center'
+        const t = this.add.text(x, y, `${label}: ${on ? 'ON' : 'OFF'}`, {
+            fontFamily: 'Arial Black', fontSize: this.fs, align: 'center'
         }).setOrigin(0.5).setInteractive();
-        text.setColor(on ? '#00ff00' : '#888888');
-
-        text.on('pointerdown', () => {
+        t.setColor(on ? '#00ff00' : '#888888');
+        t.on('pointerdown', () => {
             on = !on;
-            safeSetItem(storageKey, on);
-            text.setText(`${label}: ${on ? 'ON' : 'OFF'}`);
-            text.setColor(on ? '#00ff00' : '#888888');
+            safeSetItem(key, on);
+            t.setText(`${label}: ${on ? 'ON' : 'OFF'}`);
+            t.setColor(on ? '#00ff00' : '#888888');
         });
+        return t;
+    }
 
-        return text;
+    // A single tappable "Label: Value" line that cycles. colorFn (optional)
+    // tints the line to reflect the current value (used by the color picker).
+    makeCycle(x, y, label, getText, onTap, colorFn) {
+        const t = this.add.text(x, y, `${label}: ${getText()}`, {
+            fontFamily: 'Arial Black', fontSize: this.fs, color: '#ffcc66', align: 'center'
+        }).setOrigin(0.5).setInteractive();
+        if (colorFn) t.setColor(colorFn());
+        t.on('pointerdown', () => {
+            const v = onTap();
+            t.setText(`${label}: ${v}`);
+            if (colorFn) t.setColor(colorFn());
+        });
+        return t;
+    }
+
+    // "Label: N" with ‹ › steppers on the same line.
+    makeStepper(x, y, label, key, def, min, max) {
+        let val = parseInt(safeGetItem(key)) || def;
+        val = Math.min(max, Math.max(min, val));
+        const mid = this.add.text(x, y, `${label}: ${val}`, {
+            fontFamily: 'Arial Black', fontSize: this.fs, color: '#ffff00', align: 'center'
+        }).setOrigin(0.5);
+        const half = mid.width / 2;
+        const dec = this.add.text(x - half - 24, y, '‹', {
+            fontFamily: 'Arial Black', fontSize: this.fs + 10, color: '#ffffff'
+        }).setOrigin(0.5).setInteractive();
+        const inc = this.add.text(x + half + 24, y, '›', {
+            fontFamily: 'Arial Black', fontSize: this.fs + 10, color: '#ffffff'
+        }).setOrigin(0.5).setInteractive();
+        dec.on('pointerdown', () => { if (val > min) { val--; safeSetItem(key, val); mid.setText(`${label}: ${val}`); } });
+        inc.on('pointerdown', () => { if (val < max) { val++; safeSetItem(key, val); mid.setText(`${label}: ${val}`); } });
+        return mid;
     }
 }

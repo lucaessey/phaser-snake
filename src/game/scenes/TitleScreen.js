@@ -28,12 +28,15 @@ export class TitleScreen extends Scene
             this.scene.start('Game');
         });
 
-        const highScore = localStorage.getItem('highScore') || 0;
-        this.add.text(this.cameras.main.width - 20, 20, `High Score: ${highScore}`, {
-            fontFamily: 'Arial', fontSize: 24, color: '#000000',
-            stroke: '#ffffff', strokeThickness: 4,
-            align: 'right'
-        }).setOrigin(1, 0);
+        // Crown opens the per-setup high scores page.
+        const crownBtn = this.add.text(this.cameras.main.width - 20, 20, '👑', {
+            fontFamily: 'Arial', fontSize: 48, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 4
+        }).setOrigin(1, 0).setInteractive();
+
+        crownBtn.on('pointerdown', () => {
+            this.scene.start('HighScores');
+        });
 
         const settingsBtn = this.add.text(20, 20, '⚙️', {
             fontFamily: 'Arial', fontSize: 48, color: '#ffffff',

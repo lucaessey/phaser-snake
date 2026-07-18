@@ -1,54 +1,188 @@
 import { Scene } from 'phaser';
 
+// Selectable snake colors. Applied as a tint over the green sprite art;
+// index 0 ('Classic') uses white, which leaves the original art untouched.
+export const SNAKE_COLORS = [
+    { name: 'Classic', tint: 0xffffff },
+    { name: 'Blue',    tint: 0x66b3ff },
+    { name: 'Red',     tint: 0xff6b6b },
+    { name: 'Purple',  tint: 0xc77dff },
+    { name: 'Orange',  tint: 0xffb347 },
+    { name: 'Pink',    tint: 0xff9ff3 },
+    { name: 'Gold',    tint: 0xffe066 },
+    { name: 'Cyan',    tint: 0x66f0e0 },
+];
+
 export class Snake {
-    constructor(scene, tileSize) {
+    // options (all optional — defaults reproduce the original player snake):
+    //   startCol, startRow : head cell (grid coords). Default ~ (400, 300).
+    //   direction          : initial travel direction. Default 'right'.
+    //   length             : starting segment count. Default 3.
+    //   color              : tint override. Default = player's saved color.
+    //   isRival            : marks this as the AI snake.
+    //   headMarker         : texture key drawn over the head (visual distinction).
+    //   onTick             : callback fired at the end of every logical tick.
+    constructor(scene, tileSize, options = {}) {
         this.scene = scene;
         this.tileSize = tileSize;
-        
+
         const speedInTiles = parseInt(localStorage.getItem('snakeSpeed')) || 5;
         this.speed = speedInTiles * this.tileSize; // Pixels per second
-        
-        // Ensure starting position is grid-aligned
-        const startX = Math.floor(400 / this.tileSize) * this.tileSize + this.tileSize / 2;
-        const startY = Math.floor(300 / this.tileSize) * this.tileSize + this.tileSize / 2;
-        
-        // Logical state (Grid Coordinates)
-        // Index 0 is Head. Index 1 is Body[0], etc.
+
+        if (options.color !== undefined) {
+            this.color = options.color;
+        } else {
+            const colorIndex = parseInt(localStorage.getItem('snakeColorIndex')) || 0;
+            this.color = (SNAKE_COLORS[colorIndex] || SNAKE_COLORS[0]).tint;
+        }
+
+        // Skin selects an alternate texture set via a key prefix. '' is the
+        // classic green sprite art; other skins (e.g. 'ttt') supply their own
+        // textures and render in their natural colors (the tint is ignored).
+        const skin = options.skin || 'classic';
+        this.skinPrefix = skin === 'classic' ? '' : `${skin}_`;
+        // The 'black' skin is a chain of separate numbered tiles: no directional
+        // shapes, no corner pieces — every block is a square that alternates
+        // between a '6' and a '7' by its position from the head.
+        this.blockSkin = skin === 'black';
+        // The 'brainrot' skin is also separate tiles, but each block shows a
+        // random one of 5 images (fixed once assigned). Uses tiles 'tile_0..4'.
+        this.imageSkin = skin === 'brainrot';
+
+        this.isRival = !!options.isRival;
+        this.onTick = options.onTick || null;
+
+        const length = Math.max(2, options.length || 3);
+        const direction = options.direction || 'right';
+
+        // Head cell, grid-aligned to the tile center.
+        const startCol = options.startCol !== undefined
+            ? options.startCol : Math.floor(400 / this.tileSize);
+        const startRow = options.startRow !== undefined
+            ? options.startRow : Math.floor(300 / this.tileSize);
+        const startX = startCol * this.tileSize + this.tileSize / 2;
+        const startY = startRow * this.tileSize + this.tileSize / 2;
+
+        // Body trails opposite to the travel direction.
+        const back = {
+            right: { dx: -1, dy: 0 }, left: { dx: 1, dy: 0 },
+            up: { dx: 0, dy: 1 }, down: { dx: 0, dy: -1 }
+        }[direction];
+
+        // Logical state (Grid Coordinates). Index 0 is Head, last is Tail.
         this.gridCoords = [];
-        this.gridCoords.push({ x: startX, y: startY }); // Head
-        this.gridCoords.push({ x: startX - this.tileSize, y: startY }); // Body 1
-        this.gridCoords.push({ x: startX - (2 * this.tileSize), y: startY }); // Body 2 (Tail)
+        for (let i = 0; i < length; i++) {
+            this.gridCoords.push({
+                x: startX + back.dx * i * this.tileSize,
+                y: startY + back.dy * i * this.tileSize
+            });
+        }
 
         // Visual Sprites
         this.body = []; // Stores body segments (excluding head)
         this.corners = this.scene.add.group(); // Group for static corner sprites
-        
-        this.head = this.scene.physics.add.image(startX, startY, 'head_right');
+
+        let headKey;
+        if (this.imageSkin) headKey = this.randomImgKey();
+        else if (this.blockSkin) headKey = this.blockTex(0);
+        else headKey = this.tex('head_right');
+        this.head = this.scene.physics.add.image(startX, startY, headKey);
         this.head.setDisplaySize(this.tileSize, this.tileSize);
         this.head.setDepth(2); // Head always on top
-        
-        // Create initial body sprites
-        // Note: this.body[0] corresponds to this.gridCoords[1]
-        const bodyPart1 = this.scene.add.image(this.gridCoords[1].x, this.gridCoords[1].y, 'body_horizontal');
-        bodyPart1.setDisplaySize(this.tileSize, this.tileSize);
-        bodyPart1.setDepth(0);
-        this.body.push(bodyPart1);
 
-        const bodyPart2 = this.scene.add.image(this.gridCoords[2].x, this.gridCoords[2].y, 'tail_right');
-        bodyPart2.setDisplaySize(this.tileSize, this.tileSize);
-        bodyPart2.setDepth(2); // Tail also on top (like head)
-        this.body.push(bodyPart2);
+        // Create body sprites for gridCoords[1..end]; the last one is the tail.
+        for (let i = 1; i < length; i++) {
+            const isTail = (i === length - 1);
+            let key;
+            if (this.imageSkin) key = this.randomImgKey();
+            else if (this.blockSkin) key = this.blockTex(i);
+            else key = isTail ? this.tex('tail_right') : this.tex('body_horizontal');
+            const part = this.scene.add.image(this.gridCoords[i].x, this.gridCoords[i].y, key);
+            part.setDisplaySize(this.tileSize, this.tileSize);
+            part.setDepth(isTail ? 2 : 0); // Tail on top (like head)
+            this.body.push(part);
+        }
+        this.tail = this.body[this.body.length - 1];
 
-        this.tail = bodyPart2;
-        
-        this.direction = 'right';
-        this.nextDirection = 'right';
-        
+        this.direction = direction;
+        this.nextDirection = direction;
+
         this.accumulatedMove = 0; // In pixels
         this.dead = false;
-        
+
+        // Optional head marker (e.g. for the rival), drawn above the head.
+        if (options.headMarker) {
+            this.headMarker = this.scene.add.image(startX, startY, options.headMarker);
+            this.headMarker.setDisplaySize(this.tileSize, this.tileSize);
+            this.headMarker.setDepth(3);
+        } else {
+            this.headMarker = null;
+        }
+
         // Initial texture update
         this.updateBodyTextures();
+        this.applyColor();
+    }
+
+    // Remove every sprite this snake owns (used when the rival dies).
+    destroy() {
+        this.head.destroy();
+        this.body.forEach(part => part.destroy());
+        this.corners.clear(true, true);
+        if (this.headMarker) {
+            this.headMarker.destroy();
+        }
+    }
+
+    // Prefix a base texture name with the active skin (e.g. 'head_up' ->
+    // 'ttt_head_up'). Classic skin returns the name unchanged.
+    tex(name) {
+        return this.skinPrefix + name;
+    }
+
+    // Block-skin tile for a segment at the given distance from the head:
+    // even -> '6' (head is 0), odd -> '7'. Produces the alternating pattern.
+    blockTex(chainIndex) {
+        return `${this.skinPrefix}tile_${chainIndex % 2 === 0 ? '6' : '7'}`;
+    }
+
+    // Image-skin: pick a random tile (0..4) for a new block. The choice is baked
+    // onto the sprite (sprite.imgVar) so it stays fixed as the snake moves.
+    randomImgKey() {
+        return `${this.skinPrefix}tile_${Phaser.Math.Between(0, 4)}`;
+    }
+
+    applyColor() {
+        // Skinned snakes keep their own artwork colors; only the classic set is
+        // tinted by the chosen snake color.
+        const tint = this.skinPrefix ? 0xffffff : this.color;
+        this.head.setTint(tint);
+        this.body.forEach(part => part.setTint(tint));
+        this.corners.getChildren().forEach(corner => corner.setTint(tint));
+    }
+
+    setColor(tint) {
+        this.color = tint;
+        this.applyColor();
+    }
+
+    // Teleport the whole snake to a new straight run of cells.
+    // cells: pixel-center coords, head first, same length as gridCoords.
+    relocate(cells, direction) {
+        for (let i = 0; i < this.gridCoords.length; i++) {
+            this.gridCoords[i].x = cells[i].x;
+            this.gridCoords[i].y = cells[i].y;
+        }
+
+        this.direction = direction;
+        this.nextDirection = direction;
+        this.accumulatedMove = 0;
+
+        // The snake is straight after teleporting, so drop all corner pieces
+        this.corners.clear(true, true);
+
+        this.updateBodyTextures();
+        this.updateVisuals(0);
     }
 
     grow() {
@@ -63,9 +197,14 @@ export class Snake {
         this.tail.setDepth(0);
 
         // Visual segment
-        const newPart = this.scene.add.image(lastCoord.x, lastCoord.y, 'body_horizontal');
+        let newKey;
+        if (this.imageSkin) newKey = this.randomImgKey();
+        else if (this.blockSkin) newKey = this.blockTex(this.gridCoords.length - 1);
+        else newKey = this.tex('body_horizontal');
+        const newPart = this.scene.add.image(lastCoord.x, lastCoord.y, newKey);
         newPart.setDisplaySize(this.tileSize, this.tileSize);
         newPart.setDepth(2); // New tail on top
+        newPart.setTint(this.skinPrefix ? 0xffffff : this.color);
         this.body.push(newPart);
         
         this.tail = newPart;
@@ -154,9 +293,20 @@ export class Snake {
 
         // 7. Update Textures (based on new logical positions)
         this.updateBodyTextures();
+
+        // 8. Notify the scene that one logical step has completed. This is the
+        //    single "game tick" that drives the rival, collisions, and the ghost.
+        if (this.onTick) {
+            this.onTick();
+        }
     }
 
     spawnCorner(x, y, fromDir, toDir) {
+        // Separate-tile skins have no corner pieces.
+        if (this.blockSkin || this.imageSkin) {
+            return;
+        }
+
         let texture = 'body_bottomleft'; // Default
 
         // Logic map:
@@ -183,9 +333,10 @@ export class Snake {
             else if (toDir === 'left') texture = 'body_topleft';
         }
 
-        const corner = this.scene.add.image(x, y, texture);
+        const corner = this.scene.add.image(x, y, this.tex(texture));
         corner.setDisplaySize(this.tileSize, this.tileSize);
         corner.setDepth(1); // Corners above body
+        corner.setTint(this.skinPrefix ? 0xffffff : this.color);
         this.corners.add(corner);
     }
 
@@ -202,6 +353,10 @@ export class Snake {
         }
         
         this.head.setPosition(headX, headY);
+
+        if (this.headMarker) {
+            this.headMarker.setPosition(headX, headY);
+        }
 
         // Body Segments
         for (let i = 0; i < this.body.length; i++) {
@@ -276,39 +431,55 @@ export class Snake {
     }
 
     updateBodyTextures() {
-        this.head.setTexture(`head_${this.direction}`);
-    
+        // Image skin: each block's random tile is baked in at creation and never
+        // changes, so there is nothing to update here.
+        if (this.imageSkin) {
+            return;
+        }
+
+        // Block skin: every segment is a numbered tile, alternating 6/7 from the
+        // head. No directional shapes.
+        if (this.blockSkin) {
+            this.head.setTexture(this.blockTex(0));
+            for (let i = 0; i < this.body.length; i++) {
+                this.body[i].setTexture(this.blockTex(i + 1));
+            }
+            return;
+        }
+
+        this.head.setTexture(this.tex(`head_${this.direction}`));
+
         for (let i = 0; i < this.body.length; i++) {
             const segment = this.body[i];
             const coord = this.gridCoords[i + 1];
-            
+
             // Check if Tail
             const isTail = (i === this.body.length - 1);
 
             if (isTail) {
                 // Tail points towards the segment before it
                 const prevCoord = this.gridCoords[i]; // Towards head
-                
+
                 if (prevCoord.x === coord.x) {
-                    segment.setTexture(prevCoord.y > coord.y ? 'tail_up' : 'tail_down');
+                    segment.setTexture(this.tex(prevCoord.y > coord.y ? 'tail_up' : 'tail_down'));
                 }
                 else {
-                    segment.setTexture(prevCoord.x > coord.x ? 'tail_left' : 'tail_right');
+                    segment.setTexture(this.tex(prevCoord.x > coord.x ? 'tail_left' : 'tail_right'));
                 }
             }
-            else { 
+            else {
                 // Body Segment: Determine if Horizontal or Vertical based on movement path
                 // Moving FROM coord TO gridCoords[i]
                 // But wait, the texture represents the segment ITSELF.
                 // The segment connects gridCoords[i+1] and gridCoords[i].
                 // So check the relationship between them.
-                
+
                 const targetCoord = this.gridCoords[i];
-                
+
                 if (coord.x === targetCoord.x) {
-                    segment.setTexture('body_vertical');
+                    segment.setTexture(this.tex('body_vertical'));
                 } else {
-                    segment.setTexture('body_horizontal');
+                    segment.setTexture(this.tex('body_horizontal'));
                 }
             }
         }

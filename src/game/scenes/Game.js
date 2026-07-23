@@ -27,8 +27,17 @@ export const SKINS = [
     { id: 'black', name: 'Black 6/7' },
     { id: 'brainrot', name: 'Numbers' },
     { id: 'slime', name: 'Slime' },
-    { id: 'pixel', name: 'Pixel 8-bit' }
+    { id: 'pixel', name: 'Pixel 8-bit' },
+    { id: 'neon', name: 'Neon' },
+    { id: 'candy', name: 'Candy Cane' },
+    { id: 'rainbow', name: 'Rainbow' },
+    { id: 'lava', name: 'Lava' },
+    { id: 'ice', name: 'Ice' },
+    { id: 'gold', name: 'Gold' },
+    { id: 'robot', name: 'Robot' }
 ];
+
+const FANCY_SKINS = ['neon', 'candy', 'rainbow', 'lava', 'ice', 'gold', 'robot'];
 
 // The 'brainrot' skin puts one of these character images on each white block,
 // chosen at random per block. Drop the PNGs in public/assets/ with these names;
@@ -644,6 +653,7 @@ export class Game extends Scene
         if (skinId === 'brainrot') { this.createImageSkinTextures(skinId); return; }
         if (skinId === 'slime') { this.createSlimeSkinTextures(skinId); return; }
         if (skinId === 'pixel') { this.createPixelSkinTextures(skinId); return; }
+        if (FANCY_SKINS.includes(skinId)) { this.createFancySkin(skinId); return; }
         this.createWoodSkinTextures(skinId);
     }
 
@@ -947,6 +957,195 @@ export class Game extends Scene
         tail('right'); gen('tail_right');
 
         g.destroy();
+    }
+
+    // ---- Shared building blocks for the "fancy" directional skins ----
+
+    // Solid L-shape that connects two adjacent edges (used for corner tiles).
+    _cornerL(g, R, m, color, l, r, t, b, ox, oy) {
+        g.fillStyle(color, 1);
+        g.fillRect(m, m, R - 2 * m, R - 2 * m);
+        if (l) g.fillRect(0, m, R / 2, R - 2 * m);
+        if (r) g.fillRect(R / 2, m, R / 2, R - 2 * m);
+        if (t) g.fillRect(m, 0, R - 2 * m, R / 2);
+        if (b) g.fillRect(m, R / 2, R - 2 * m, R / 2);
+        g.fillRect(ox, oy, m, m);
+    }
+
+    // Outlined tapered triangle that points in `dir`.
+    _tailTri(g, R, m, dir, outline, color) {
+        g.fillStyle(outline, 1);
+        if (dir === 'left')  g.fillTriangle(R, m - 2, R, R - m + 2, 2, R / 2);
+        if (dir === 'right') g.fillTriangle(0, m - 2, 0, R - m + 2, R - 2, R / 2);
+        if (dir === 'up')    g.fillTriangle(m - 2, R, R - m + 2, R, R / 2, 2);
+        if (dir === 'down')  g.fillTriangle(m - 2, 0, R - m + 2, 0, R / 2, R - 2);
+        g.fillStyle(color, 1);
+        if (dir === 'left')  g.fillTriangle(R, m + 1, R, R - m - 1, 8, R / 2);
+        if (dir === 'right') g.fillTriangle(0, m + 1, 0, R - m - 1, R - 8, R / 2);
+        if (dir === 'up')    g.fillTriangle(m + 1, R, R - m - 1, R, R / 2, 8);
+        if (dir === 'down')  g.fillTriangle(m + 1, 0, R - m - 1, 0, R / 2, R - 8);
+    }
+
+    // Rounded head block that connects on the back edge (front rounded).
+    _headShape(g, R, m, fx, fy, fill, outline) {
+        if (fx === 1) {
+            g.fillStyle(outline, 1); g.fillRoundedRect(0, m - 2, R - 2, R - 2 * m + 4, { tl: 4, bl: 4, tr: 26, br: 26 });
+            g.fillStyle(fill, 1);    g.fillRoundedRect(0, m, R - 6, R - 2 * m, { tl: 4, bl: 4, tr: 24, br: 24 });
+        } else if (fx === -1) {
+            g.fillStyle(outline, 1); g.fillRoundedRect(2, m - 2, R - 2, R - 2 * m + 4, { tl: 26, bl: 26, tr: 4, br: 4 });
+            g.fillStyle(fill, 1);    g.fillRoundedRect(6, m, R - 6, R - 2 * m, { tl: 24, bl: 24, tr: 4, br: 4 });
+        } else if (fy === 1) {
+            g.fillStyle(outline, 1); g.fillRoundedRect(m - 2, 0, R - 2 * m + 4, R - 2, { tl: 4, tr: 4, bl: 26, br: 26 });
+            g.fillStyle(fill, 1);    g.fillRoundedRect(m, 0, R - 2 * m, R - 6, { tl: 4, tr: 4, bl: 24, br: 24 });
+        } else {
+            g.fillStyle(outline, 1); g.fillRoundedRect(m - 2, 2, R - 2 * m + 4, R - 2, { tl: 26, tr: 26, bl: 4, br: 4 });
+            g.fillStyle(fill, 1);    g.fillRoundedRect(m, 6, R - 2 * m, R - 6, { tl: 24, tr: 24, bl: 4, br: 4 });
+        }
+    }
+
+    // Two eyes on the front of the head (optional glow halo).
+    _eyes(g, R, fx, fy, whiteC, pupilC, glowC) {
+        const cx = R / 2, cy = R / 2, sx = -fy, sy = fx;
+        [1, -1].forEach(d => {
+            const ex = cx + fx * 11 + sx * 7 * d, ey = cy + fy * 11 + sy * 7 * d;
+            if (glowC !== undefined) { g.fillStyle(glowC, 0.45); g.fillCircle(ex, ey, 7); }
+            g.fillStyle(whiteC, 1); g.fillCircle(ex, ey, 4.5);
+            g.fillStyle(pupilC, 1); g.fillCircle(ex + fx * 1.5, ey + fy * 1.5, 2.2);
+        });
+    }
+
+    // Coloured lanes running along the body length (gradient / rainbow feel).
+    _bandsBar(g, R, m, orient, colors, outline) {
+        g.fillStyle(outline, 1);
+        if (orient === 'h') g.fillRect(0, m - 2, R, R - 2 * m + 4); else g.fillRect(m - 2, 0, R - 2 * m + 4, R);
+        const bw = (R - 2 * m) / colors.length;
+        colors.forEach((c, i) => {
+            g.fillStyle(c, 1);
+            if (orient === 'h') g.fillRect(0, Math.round(m + i * bw), R, Math.ceil(bw) + 1);
+            else g.fillRect(Math.round(m + i * bw), 0, Math.ceil(bw) + 1, R);
+        });
+    }
+
+    // Generates the 14 directional textures for a fancy skin from a config.
+    _makeDirSkin(skinId, cfg) {
+        const R = 64, m = cfg.m || 6, p = `${skinId}_`;
+        if (this.textures.exists(p + 'head_right')) {
+            return;
+        }
+        const g = this.make.graphics({ x: 0, y: 0 }, false);
+        const gen = (n) => { g.generateTexture(p + n, R, R); g.clear(); };
+        const body = cfg.body || ((gg, RR, mm, or) => this._bandsBar(gg, RR, mm, or, cfg.bands, cfg.outline));
+
+        body(g, R, m, 'h'); gen('body_horizontal');
+        body(g, R, m, 'v'); gen('body_vertical');
+
+        [['body_bottomleft', 1, 0, 0, 1, 0, R - m], ['body_topleft', 1, 0, 1, 0, 0, 0],
+         ['body_bottomright', 0, 1, 0, 1, R - m, R - m], ['body_topright', 0, 1, 1, 0, R - m, 0]]
+            .forEach(([n, l, r, t, b, ox, oy]) => {
+                this._cornerL(g, R, m, cfg.cornerColor || cfg.base, l, r, t, b, ox, oy);
+                if (cfg.cornerExtra) cfg.cornerExtra(g, R, m);
+                gen(n);
+            });
+
+        [[1, 0, 'head_right'], [-1, 0, 'head_left'], [0, 1, 'head_down'], [0, -1, 'head_up']]
+            .forEach(([fx, fy, n]) => {
+                this._headShape(g, R, m, fx, fy, cfg.headFill || cfg.base, cfg.outline);
+                if (cfg.headExtra) cfg.headExtra(g, R, m, fx, fy);
+                else this._eyes(g, R, fx, fy, cfg.eyeW || 0xffffff, cfg.eyeP || 0x111111, cfg.eyeGlow);
+                gen(n);
+            });
+
+        ['up', 'down', 'left', 'right'].forEach(d => {
+            this._tailTri(g, R, m, d, cfg.outline, cfg.tailColor || cfg.base);
+            gen('tail_' + d);
+        });
+
+        g.destroy();
+    }
+
+    // The seven pattern skins, defined by compact configs.
+    createFancySkin(skinId) {
+        const configs = {
+            // Dark segments with a glowing cyan outline; glowing eyes.
+            neon: {
+                m: 6, base: 0x0b0b1a, cornerColor: 0x0b0b1a, outline: 0x00e6ff,
+                body: (g, R, m, or) => {
+                    g.fillStyle(0x00e6ff, 1); if (or === 'h') g.fillRect(0, m - 2, R, R - 2 * m + 4); else g.fillRect(m - 2, 0, R - 2 * m + 4, R);
+                    g.fillStyle(0x0b0b1a, 1); if (or === 'h') g.fillRect(0, m + 2, R, R - 2 * m - 4); else g.fillRect(m + 2, 0, R - 2 * m - 4, R);
+                    g.fillStyle(0x8af7ff, 0.6); if (or === 'h') g.fillRect(0, m, R, 2); else g.fillRect(m, 0, 2, R);
+                },
+                cornerExtra: (g, R) => { g.fillStyle(0x00e6ff, 1); g.fillCircle(R / 2, R / 2, 5); g.fillStyle(0x0b0b1a, 1); g.fillCircle(R / 2, R / 2, 2.5); },
+                headExtra: (g, R, m, fx, fy) => this._eyes(g, R, fx, fy, 0xe6ffff, 0x00e6ff, 0x00e6ff)
+            },
+            // Red diagonal stripes on white.
+            candy: {
+                m: 6, base: 0xffffff, cornerColor: 0xffffff, outline: 0xd62828, eyeW: 0xffffff, eyeP: 0xd62828,
+                body: (g, R, m, or) => {
+                    const h = R - 2 * m;
+                    g.fillStyle(0xffffff, 1); if (or === 'h') g.fillRect(0, m, R, h); else g.fillRect(m, 0, h, R);
+                    g.fillStyle(0xe23c3c, 1);
+                    if (or === 'h') { for (let x = -h; x < R; x += 22) { g.fillTriangle(x, m, x + 11, m, x + 11 - h, R - m); g.fillTriangle(x, m, x + 11 - h, R - m, x - h, R - m); } }
+                    else { for (let y = -h; y < R; y += 22) { g.fillTriangle(m, y, m, y + 11, R - m, y + 11 - h); g.fillTriangle(m, y, R - m, y + 11 - h, R - m, y - h); } }
+                }
+            },
+            // Rainbow lanes.
+            rainbow: {
+                m: 6, bands: [0xff3b30, 0xff9500, 0xffd60a, 0x34c759, 0x0a84ff, 0x5e5ce6, 0xbf5af2],
+                cornerColor: 0x5e5ce6, outline: 0x141425, headFill: 0xff3b30, eyeW: 0xffffff, eyeP: 0x222222
+            },
+            // Orange→red gradient with ember flecks.
+            lava: {
+                m: 6, base: 0xff5a1f, cornerColor: 0xd83010, outline: 0x3a0a00, headFill: 0xff7a1f,
+                eyeW: 0xfff2b0, eyeP: 0x5a0f00, eyeGlow: 0xff7a1f,
+                body: (g, R, m, or) => {
+                    this._bandsBar(g, R, m, or, [0xffd23f, 0xff8c1a, 0xff4d0f, 0xcc1a00], 0x3a0a00);
+                    g.fillStyle(0xffe680, 0.95);
+                    const flecks = [[14, m + 6], [40, m + 10], [52, R - m - 8], [22, R - m - 5]];
+                    (or === 'h' ? flecks : flecks.map(([a, b]) => [b, a])).forEach(([x, y]) => g.fillCircle(x, y, 2));
+                }
+            },
+            // Pale translucent blue with white facets.
+            ice: {
+                m: 6, base: 0x9fdcff, cornerColor: 0x86cdf5, outline: 0x2f6a9a, headFill: 0xbfe9ff, eyeW: 0xffffff, eyeP: 0x2f6a9a,
+                body: (g, R, m, or) => {
+                    g.fillStyle(0x2f6a9a, 1); if (or === 'h') g.fillRect(0, m - 2, R, R - 2 * m + 4); else g.fillRect(m - 2, 0, R - 2 * m + 4, R);
+                    g.fillStyle(0xaee4ff, 0.85); if (or === 'h') g.fillRect(0, m, R, R - 2 * m); else g.fillRect(m, 0, R - 2 * m, R);
+                    g.fillStyle(0xffffff, 0.7);
+                    if (or === 'h') { g.fillTriangle(12, m, 20, m, 8, R - m); g.fillTriangle(40, m, 46, m, 34, R - m); }
+                    else { g.fillTriangle(m, 12, m, 20, R - m, 8); g.fillTriangle(m, 40, m, 46, R - m, 34); }
+                }
+            },
+            // Metallic gold with a bright specular strip.
+            gold: {
+                m: 6, base: 0xd4af37, cornerColor: 0xc9a230, outline: 0x6e5210, headFill: 0xd4af37, eyeW: 0xfff6cf, eyeP: 0x6e5210,
+                body: (g, R, m, or) => {
+                    g.fillStyle(0x6e5210, 1); if (or === 'h') g.fillRect(0, m - 2, R, R - 2 * m + 4); else g.fillRect(m - 2, 0, R - 2 * m + 4, R);
+                    g.fillStyle(0xd4af37, 1); if (or === 'h') g.fillRect(0, m, R, R - 2 * m); else g.fillRect(m, 0, R - 2 * m, R);
+                    g.fillStyle(0xfff2b0, 1); if (or === 'h') g.fillRect(0, m + 4, R, 4); else g.fillRect(m + 4, 0, 4, R);
+                    g.fillStyle(0x9c7a1e, 1); if (or === 'h') g.fillRect(0, R - m - 6, R, 4); else g.fillRect(R - m - 6, 0, 4, R);
+                }
+            },
+            // Riveted metal plates with a single glowing eye.
+            robot: {
+                m: 6, base: 0x6b7280, cornerColor: 0x5a616e, outline: 0x24272e,
+                body: (g, R, m, or) => {
+                    g.fillStyle(0x24272e, 1); if (or === 'h') g.fillRect(0, m - 2, R, R - 2 * m + 4); else g.fillRect(m - 2, 0, R - 2 * m + 4, R);
+                    g.fillStyle(0x6b7280, 1); if (or === 'h') g.fillRect(0, m, R, R - 2 * m); else g.fillRect(m, 0, R - 2 * m, R);
+                    g.fillStyle(0x8b93a3, 1); if (or === 'h') g.fillRect(0, m + 3, R, 3); else g.fillRect(m + 3, 0, 3, R);
+                    g.fillStyle(0x3a3f47, 1);
+                    const riv = (or === 'h') ? [[9, m + 7], [55, m + 7], [9, R - m - 7], [55, R - m - 7]] : [[m + 7, 9], [m + 7, 55], [R - m - 7, 9], [R - m - 7, 55]];
+                    riv.forEach(([x, y]) => g.fillCircle(x, y, 2.5));
+                },
+                headExtra: (g, R, m, fx, fy) => {
+                    const ex = R / 2 + fx * 10, ey = R / 2 + fy * 10;
+                    g.fillStyle(0xff3b30, 0.4); g.fillCircle(ex, ey, 9);
+                    g.fillStyle(0xff3b30, 1); g.fillCircle(ex, ey, 5);
+                    g.fillStyle(0xffd7d2, 1); g.fillCircle(ex - 1, ey - 1, 1.6);
+                }
+            }
+        };
+        const cfg = configs[skinId];
+        if (cfg) this._makeDirSkin(skinId, cfg);
     }
 
     // --- Rival: spawn -------------------------------------------------------

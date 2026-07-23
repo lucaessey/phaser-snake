@@ -25,7 +25,9 @@ export const SKINS = [
     { id: 'classic', name: 'Classic' },
     { id: 'ttt', name: 'Tung Tung Sahur' },
     { id: 'black', name: 'Black 6/7' },
-    { id: 'brainrot', name: 'Numbers' }
+    { id: 'brainrot', name: 'Numbers' },
+    { id: 'slime', name: 'Slime' },
+    { id: 'pixel', name: 'Pixel 8-bit' }
 ];
 
 // The 'brainrot' skin puts one of these character images on each white block,
@@ -635,18 +637,18 @@ export class Game extends Scene
         }
     }
 
-    // Generates the full directional texture set for a code-drawn skin. Textures
-    // are drawn at a fixed 64px reference and scaled per tile (like the classic
-    // PNG sprites).
+    // Dispatches to the right code-drawn texture generator for the skin. Each
+    // directional generator draws at a fixed 64px reference, scaled per tile.
     createSkinTextures(skinId) {
-        if (skinId === 'black') {
-            this.createBlockSkinTextures(skinId);
-            return;
-        }
-        if (skinId === 'brainrot') {
-            this.createImageSkinTextures(skinId);
-            return;
-        }
+        if (skinId === 'black') { this.createBlockSkinTextures(skinId); return; }
+        if (skinId === 'brainrot') { this.createImageSkinTextures(skinId); return; }
+        if (skinId === 'slime') { this.createSlimeSkinTextures(skinId); return; }
+        if (skinId === 'pixel') { this.createPixelSkinTextures(skinId); return; }
+        this.createWoodSkinTextures(skinId);
+    }
+
+    // Tung Tung Sahur — a wooden bat with a face.
+    createWoodSkinTextures(skinId) {
         const R = 64;
         const p = `${skinId}_`;
         if (this.textures.exists(p + 'head_right')) {
@@ -745,6 +747,199 @@ export class Game extends Scene
             if (dir === 'right') { g.fillStyle(OUTLINE, 1); g.fillTriangle(0, m - 2, 0, R - m + 2, R - 1, R / 2); g.fillStyle(WOOD, 1); g.fillTriangle(0, m + 1, 0, R - m - 1, R - 7, R / 2); }
             if (dir === 'up')    { g.fillStyle(OUTLINE, 1); g.fillTriangle(m - 2, R, R - m + 2, R, R / 2, 1);   g.fillStyle(WOOD, 1); g.fillTriangle(m + 1, R, R - m - 1, R, R / 2, 7); }
             if (dir === 'down')  { g.fillStyle(OUTLINE, 1); g.fillTriangle(m - 2, 0, R - m + 2, 0, R / 2, R - 1); g.fillStyle(WOOD, 1); g.fillTriangle(m + 1, 0, R - m - 1, 0, R / 2, R - 7); }
+        };
+        tail('up');    gen('tail_up');
+        tail('down');  gen('tail_down');
+        tail('left');  gen('tail_left');
+        tail('right'); gen('tail_right');
+
+        g.destroy();
+    }
+
+    // Slime — a glossy green blob with a big highlight shine and cute eyes.
+    createSlimeSkinTextures(skinId) {
+        const R = 64, m = 6, p = `${skinId}_`;
+        if (this.textures.exists(p + 'head_right')) {
+            return;
+        }
+        const BODY = 0x37cf4e, EDGE = 0x1c8a30, SHADE = 0x27a83c, SHEEN = 0xc9f7cf, SHINE = 0xffffff;
+        const g = this.make.graphics({ x: 0, y: 0 }, false);
+        const gen = (n) => { g.generateTexture(p + n, R, R); g.clear(); };
+
+        // ---- straight body ----
+        g.fillStyle(EDGE, 1);  g.fillRect(0, m - 2, R, R - 2 * m + 4);
+        g.fillStyle(BODY, 1);  g.fillRect(0, m, R, R - 2 * m);
+        g.fillStyle(SHADE, 1); g.fillRect(0, R - m - 7, R, 6);
+        g.fillStyle(SHEEN, 0.8); g.fillRect(0, m + 3, R, 4);
+        g.fillStyle(SHINE, 0.6); g.fillCircle(16, m + 9, 4); g.fillCircle(44, m + 9, 3);
+        gen('body_horizontal');
+
+        g.fillStyle(EDGE, 1);  g.fillRect(m - 2, 0, R - 2 * m + 4, R);
+        g.fillStyle(BODY, 1);  g.fillRect(m, 0, R - 2 * m, R);
+        g.fillStyle(SHADE, 1); g.fillRect(R - m - 7, 0, 6, R);
+        g.fillStyle(SHEEN, 0.8); g.fillRect(m + 3, 0, 4, R);
+        g.fillStyle(SHINE, 0.6); g.fillCircle(m + 9, 16, 4); g.fillCircle(m + 9, 44, 3);
+        gen('body_vertical');
+
+        // ---- corners ----
+        const corner = (leftC, rightC, topC, botC, ox, oy) => {
+            g.fillStyle(BODY, 1);
+            g.fillRect(m, m, R - 2 * m, R - 2 * m);
+            if (leftC)  g.fillRect(0, m, R / 2, R - 2 * m);
+            if (rightC) g.fillRect(R / 2, m, R / 2, R - 2 * m);
+            if (topC)   g.fillRect(m, 0, R - 2 * m, R / 2);
+            if (botC)   g.fillRect(m, R / 2, R - 2 * m, R / 2);
+            g.fillRect(ox, oy, m, m);
+            g.fillStyle(SHINE, 0.5); g.fillCircle(R / 2, R / 2 - 4, 5);
+        };
+        corner(true, false, false, true, 0, R - m);      gen('body_bottomleft');
+        corner(true, false, true, false, 0, 0);          gen('body_topleft');
+        corner(false, true, false, true, R - m, R - m);  gen('body_bottomright');
+        corner(false, true, true, false, R - m, 0);      gen('body_topright');
+
+        // ---- head (blob + eyes + big shine) ----
+        const face = (fx, fy) => {
+            const cx = R / 2, cy = R / 2, sx = -fy, sy = fx;
+            [1, -1].forEach(d => {
+                const ex = cx + fx * 11 + sx * 7 * d, ey = cy + fy * 11 + sy * 7 * d;
+                g.fillStyle(0x08320f, 1); g.fillCircle(ex, ey, 4.5);
+                g.fillStyle(SHINE, 0.9); g.fillCircle(ex - 1.5, ey - 1.5, 1.6);
+            });
+            // big glossy highlight (consistent top-left light source)
+            g.fillStyle(SHINE, 0.65); g.fillCircle(R * 0.34, R * 0.30, 10);
+            g.fillStyle(SHINE, 0.4);  g.fillCircle(R * 0.5, R * 0.42, 5);
+        };
+        const headH = (s) => {
+            g.fillStyle(EDGE, 1);
+            if (s > 0) g.fillRoundedRect(0, m - 2, R - 2, R - 2 * m + 4, { tl: 4, bl: 4, tr: 26, br: 26 });
+            else       g.fillRoundedRect(2, m - 2, R - 2, R - 2 * m + 4, { tl: 26, bl: 26, tr: 4, br: 4 });
+            g.fillStyle(BODY, 1);
+            if (s > 0) g.fillRoundedRect(0, m, R - 6, R - 2 * m, { tl: 4, bl: 4, tr: 24, br: 24 });
+            else       g.fillRoundedRect(6, m, R - 6, R - 2 * m, { tl: 24, bl: 24, tr: 4, br: 4 });
+            face(s, 0);
+        };
+        const headV = (s) => {
+            g.fillStyle(EDGE, 1);
+            if (s > 0) g.fillRoundedRect(m - 2, 0, R - 2 * m + 4, R - 2, { tl: 4, tr: 4, bl: 26, br: 26 });
+            else       g.fillRoundedRect(m - 2, 2, R - 2 * m + 4, R - 2, { tl: 26, tr: 26, bl: 4, br: 4 });
+            g.fillStyle(BODY, 1);
+            if (s > 0) g.fillRoundedRect(m, 0, R - 2 * m, R - 6, { tl: 4, tr: 4, bl: 24, br: 24 });
+            else       g.fillRoundedRect(m, 6, R - 2 * m, R - 6, { tl: 24, tr: 24, bl: 4, br: 4 });
+            face(0, s);
+        };
+        headH(1);  gen('head_right');
+        headH(-1); gen('head_left');
+        headV(1);  gen('head_down');
+        headV(-1); gen('head_up');
+
+        // ---- tail ----
+        const tail = (dir) => {
+            g.fillStyle(EDGE, 1);
+            if (dir === 'left')  g.fillTriangle(R, m - 2, R, R - m + 2, 2, R / 2);
+            if (dir === 'right') g.fillTriangle(0, m - 2, 0, R - m + 2, R - 2, R / 2);
+            if (dir === 'up')    g.fillTriangle(m - 2, R, R - m + 2, R, R / 2, 2);
+            if (dir === 'down')  g.fillTriangle(m - 2, 0, R - m + 2, 0, R / 2, R - 2);
+            g.fillStyle(BODY, 1);
+            if (dir === 'left')  g.fillTriangle(R, m + 1, R, R - m - 1, 8, R / 2);
+            if (dir === 'right') g.fillTriangle(0, m + 1, 0, R - m - 1, R - 8, R / 2);
+            if (dir === 'up')    g.fillTriangle(m + 1, R, R - m - 1, R, R / 2, 8);
+            if (dir === 'down')  g.fillTriangle(m + 1, 0, R - m - 1, 0, R / 2, R - 8);
+            g.fillStyle(SHINE, 0.5);
+            if (dir === 'left' || dir === 'right') g.fillCircle(R / 2, m + 9, 3);
+            else g.fillCircle(m + 9, R / 2, 3);
+        };
+        tail('up');    gen('tail_up');
+        tail('down');  gen('tail_down');
+        tail('left');  gen('tail_left');
+        tail('right'); gen('tail_right');
+
+        g.destroy();
+    }
+
+    // Pixel / 8-bit — chunky beveled blocks with a dark outline and pixel eyes.
+    createPixelSkinTextures(skinId) {
+        const R = 64, m = 4, px = 4, p = `${skinId}_`;
+        if (this.textures.exists(p + 'head_right')) {
+            return;
+        }
+        const PIX = 0x7bd332, LT = 0xb6ef6a, DK = 0x3f7f18, OUT = 0x122b06;
+        const g = this.make.graphics({ x: 0, y: 0 }, false);
+        const gen = (n) => { g.generateTexture(p + n, R, R); g.clear(); };
+
+        // ---- straight body (beveled block) ----
+        g.fillStyle(OUT, 1); g.fillRect(0, m - 2, R, R - 2 * m + 4);
+        g.fillStyle(PIX, 1); g.fillRect(0, m, R, R - 2 * m);
+        g.fillStyle(LT, 1);  g.fillRect(0, m, R, px);
+        g.fillStyle(DK, 1);  g.fillRect(0, R - m - px, R, px);
+        gen('body_horizontal');
+
+        g.fillStyle(OUT, 1); g.fillRect(m - 2, 0, R - 2 * m + 4, R);
+        g.fillStyle(PIX, 1); g.fillRect(m, 0, R - 2 * m, R);
+        g.fillStyle(LT, 1);  g.fillRect(m, 0, px, R);
+        g.fillStyle(DK, 1);  g.fillRect(R - m - px, 0, px, R);
+        gen('body_vertical');
+
+        // ---- corners ----
+        const corner = (leftC, rightC, topC, botC, ox, oy) => {
+            g.fillStyle(PIX, 1);
+            g.fillRect(m, m, R - 2 * m, R - 2 * m);
+            if (leftC)  g.fillRect(0, m, R / 2, R - 2 * m);
+            if (rightC) g.fillRect(R / 2, m, R / 2, R - 2 * m);
+            if (topC)   g.fillRect(m, 0, R - 2 * m, R / 2);
+            if (botC)   g.fillRect(m, R / 2, R - 2 * m, R / 2);
+            g.fillRect(ox, oy, m, m);
+            g.fillStyle(LT, 1);
+            if (topC)  g.fillRect(m, 0, R - 2 * m, px);
+            if (leftC) g.fillRect(0, m, px, R - 2 * m);
+            g.fillStyle(DK, 1);
+            if (botC)   g.fillRect(m, R - px, R - 2 * m, px);
+            if (rightC) g.fillRect(R - px, m, px, R - 2 * m);
+        };
+        corner(true, false, false, true, 0, R - m);      gen('body_bottomleft');
+        corner(true, false, true, false, 0, 0);          gen('body_topleft');
+        corner(false, true, false, true, R - m, R - m);  gen('body_bottomright');
+        corner(false, true, true, false, R - m, 0);      gen('body_topright');
+
+        // ---- head (blocky, pixel eyes) ----
+        const face = (fx, fy) => {
+            const cx = R / 2, cy = R / 2, sx = -fy, sy = fx;
+            [1, -1].forEach(d => {
+                const ex = Math.round(cx + fx * 12 + sx * 8 * d) - 4;
+                const ey = Math.round(cy + fy * 12 + sy * 8 * d) - 4;
+                g.fillStyle(OUT, 1); g.fillRect(ex, ey, 8, 8);
+                g.fillStyle(0xffffff, 1); g.fillRect(ex + 1, ey + 1, 3, 3);
+            });
+        };
+        const head = (fx, fy) => {
+            g.fillStyle(OUT, 1); g.fillRect(m - 2, m - 2, R - 2 * m + 4, R - 2 * m + 4);
+            g.fillStyle(PIX, 1); g.fillRect(m, m, R - 2 * m, R - 2 * m);
+            g.fillStyle(LT, 1); g.fillRect(m, m, R - 2 * m, px); g.fillRect(m, m, px, R - 2 * m);
+            g.fillStyle(DK, 1); g.fillRect(m, R - m - px, R - 2 * m, px); g.fillRect(R - m - px, m, px, R - 2 * m);
+            // connect the back edge to the body
+            g.fillStyle(PIX, 1);
+            if (fx === 1)  g.fillRect(0, m, m, R - 2 * m);
+            if (fx === -1) g.fillRect(R - m, m, m, R - 2 * m);
+            if (fy === 1)  g.fillRect(m, 0, R - 2 * m, m);
+            if (fy === -1) g.fillRect(m, R - m, R - 2 * m, m);
+            face(fx, fy);
+        };
+        head(1, 0);  gen('head_right');
+        head(-1, 0); gen('head_left');
+        head(0, 1);  gen('head_down');
+        head(0, -1); gen('head_up');
+
+        // ---- tail (stepped pixel taper) ----
+        const tail = (dir) => {
+            g.fillStyle(PIX, 1);
+            if (dir === 'right') {
+                g.fillRect(0, m, 22, R - 2 * m); g.fillRect(22, m + 8, 16, R - 2 * m - 16); g.fillRect(38, m + 16, 12, R - 2 * m - 32);
+            } else if (dir === 'left') {
+                g.fillRect(R - 22, m, 22, R - 2 * m); g.fillRect(R - 38, m + 8, 16, R - 2 * m - 16); g.fillRect(R - 50, m + 16, 12, R - 2 * m - 32);
+            } else if (dir === 'down') {
+                g.fillRect(m, 0, R - 2 * m, 22); g.fillRect(m + 8, 22, R - 2 * m - 16, 16); g.fillRect(m + 16, 38, R - 2 * m - 32, 12);
+            } else if (dir === 'up') {
+                g.fillRect(m, R - 22, R - 2 * m, 22); g.fillRect(m + 8, R - 38, R - 2 * m - 16, 16); g.fillRect(m + 16, R - 50, R - 2 * m - 32, 12);
+            }
         };
         tail('up');    gen('tail_up');
         tail('down');  gen('tail_down');

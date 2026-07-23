@@ -33,7 +33,9 @@ export class SettingsScreen extends Scene
         // ---- Each control is a single tappable line, laid out below ----
         const controls = [];
 
-        controls.push((x, y) => this.makeStepper(x, y, 'Speed', 'snakeSpeed', 5, 1, 20));
+        // 1..20 by 1, then jumps to 100, 200, 300.
+        const speeds = [...Array.from({ length: 20 }, (_, i) => i + 1), 100, 200, 300];
+        controls.push((x, y) => this.makeStepper(x, y, 'Speed', 'snakeSpeed', 5, speeds));
 
         const foods = ['apple', 'banana', 'eggplant', 'jerry', 'sushi'];
         controls.push((x, y) => this.makeCycle(x, y, 'Food',
@@ -148,22 +150,27 @@ export class SettingsScreen extends Scene
         return t;
     }
 
-    // "Label: N" with ‹ › steppers on the same line.
-    makeStepper(x, y, label, key, def, min, max) {
-        let val = parseInt(safeGetItem(key)) || def;
-        val = Math.min(max, Math.max(min, val));
-        const mid = this.add.text(x, y, `${label}: ${val}`, {
+    // "Label: N" with ‹ › steppers that walk an ordered list of allowed values.
+    makeStepper(x, y, label, key, def, values) {
+        let idx = values.indexOf(parseInt(safeGetItem(key)));
+        if (idx < 0) idx = Math.max(0, values.indexOf(def));
+
+        const mid = this.add.text(x, y, `${label}: ${values[idx]}`, {
             fontFamily: 'Arial Black', fontSize: this.fs, color: '#ffff00', align: 'center'
         }).setOrigin(0.5);
+        // Position the arrows for the widest value so they never overlap.
+        mid.setText(`${label}: ${Math.max(...values)}`);
         const half = mid.width / 2;
+        mid.setText(`${label}: ${values[idx]}`);
+
         const dec = this.add.text(x - half - 24, y, '‹', {
             fontFamily: 'Arial Black', fontSize: this.fs + 10, color: '#ffffff'
         }).setOrigin(0.5).setInteractive();
         const inc = this.add.text(x + half + 24, y, '›', {
             fontFamily: 'Arial Black', fontSize: this.fs + 10, color: '#ffffff'
         }).setOrigin(0.5).setInteractive();
-        dec.on('pointerdown', () => { if (val > min) { val--; safeSetItem(key, val); mid.setText(`${label}: ${val}`); } });
-        inc.on('pointerdown', () => { if (val < max) { val++; safeSetItem(key, val); mid.setText(`${label}: ${val}`); } });
+        dec.on('pointerdown', () => { if (idx > 0) { idx--; safeSetItem(key, values[idx]); mid.setText(`${label}: ${values[idx]}`); } });
+        inc.on('pointerdown', () => { if (idx < values.length - 1) { idx++; safeSetItem(key, values[idx]); mid.setText(`${label}: ${values[idx]}`); } });
         return mid;
     }
 }

@@ -128,7 +128,7 @@ export class SettingsScreen extends Scene
 
     makeLink(x, y, label, url) {
         const t = this.add.text(x, y, label, {
-            fontFamily: 'Arial', fontSize: 16, color: '#7fd4ff'
+            fontFamily: 'Arial', fontSize: 20, color: '#7fd4ff'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         t.on('pointerover', () => t.setColor('#bfeaff'));
         t.on('pointerout', () => t.setColor('#7fd4ff'));

@@ -84,7 +84,7 @@ export class SettingsScreen extends Scene
         // ---- Flow the controls into 1 (portrait) or 2 (landscape) columns ----
         const numCols = portrait ? 1 : 2;
         const top = titleY + (portrait ? 34 : 46);
-        const bottom = h - (portrait ? 128 : 104);
+        const bottom = h - (portrait ? 160 : 124);
         const perCol = Math.ceil(controls.length / numCols);
         const rowH = Math.min(portrait ? 52 : 54, (bottom - top) / perCol);
         controls.forEach((build, idx) => {
@@ -96,8 +96,8 @@ export class SettingsScreen extends Scene
         });
 
         // ---- Clear + Back ----
-        const clearY = h - (portrait ? 86 : 66);
-        const backY = h - (portrait ? 38 : 30);
+        const clearY = h - (portrait ? 124 : 96);
+        const backY = h - (portrait ? 88 : 68);
 
         const clearBtn = this.add.text(cx, clearY, 'Clear High Scores', {
             fontFamily: 'Arial Black', fontSize: portrait ? 20 : 24, color: '#ff8888',
@@ -115,6 +115,25 @@ export class SettingsScreen extends Scene
             fontFamily: 'Arial Black', fontSize: portrait ? 28 : 34, color: '#ffffff',
             stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setInteractive().on('pointerdown', () => this.scene.start('TitleScreen'));
+
+        // ---- More by this creator ----
+        const moreY = h - (portrait ? 52 : 42);
+        const linksY = h - (portrait ? 24 : 18);
+        this.add.text(cx, moreY, 'More by this creator', {
+            fontFamily: 'Arial', fontSize: portrait ? 14 : 15, color: '#999999'
+        }).setOrigin(0.5);
+        this.makeLink(Math.round(w * 0.30), linksY, '⚡ wordventure', 'https://lucaessey.github.io/wordventure/');
+        this.makeLink(Math.round(w * 0.70), linksY, '🔠 boggle', 'https://lucaessey.github.io/Boggle/');
+    }
+
+    makeLink(x, y, label, url) {
+        const t = this.add.text(x, y, label, {
+            fontFamily: 'Arial', fontSize: 16, color: '#7fd4ff'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        t.on('pointerover', () => t.setColor('#bfeaff'));
+        t.on('pointerout', () => t.setColor('#7fd4ff'));
+        t.on('pointerdown', () => { if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener,noreferrer'); });
+        return t;
     }
 
     makeToggle(x, y, label, key, defaultOn) {

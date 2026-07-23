@@ -25,7 +25,7 @@ export const SKINS = [
     { id: 'classic', name: 'Classic' },
     { id: 'ttt', name: 'Tung Tung Sahur' },
     { id: 'black', name: 'Black 6/7' },
-    { id: 'brainrot', name: 'Brainrot' }
+    { id: 'brainrot', name: 'Numbers' }
 ];
 
 // The 'brainrot' skin puts one of these character images on each white block,

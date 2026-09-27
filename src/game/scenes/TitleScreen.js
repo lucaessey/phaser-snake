@@ -14,6 +14,9 @@ export class TitleScreen extends Scene
 
     create ()
     {
+        const tools = document.getElementById('pwa-tools');
+        tools.classList.remove('scene-hidden');
+        this.events.once('shutdown', () => tools.classList.add('scene-hidden'));
         const w = this.cameras.main.width;
         const h = this.cameras.main.height;
 

@@ -1,4 +1,5 @@
 import { Scene } from 'phaser';
+import { requestInstall, subscribeInstallState } from '../../pwa.js';
 import { SNAKE_COLORS } from '../Snake';
 import { RIVAL_DIFFICULTY, RIVAL_DIFFICULTY_ORDER } from '../rivalAI';
 import { GRID_SIZES, SKINS } from './Game';
@@ -80,6 +81,21 @@ export class SettingsScreen extends Scene
         controls.push((x, y) => this.makeToggle(x, y, 'Spikes', 'modeSpikes', false));
         controls.push((x, y) => this.makeToggle(x, y, 'Teleport', 'modeTeleport', false));
         controls.push((x, y) => this.makeToggle(x, y, 'Color Shuffle', 'modeColorShuffle', false));
+
+        controls.push((x, y) => {
+            const install = this.add.text(x, y, 'Install game', {
+                fontFamily: 'Arial Black', fontSize: this.fs, color: '#8ce568',
+                backgroundColor: '#173c1c', padding: { x: 16, y: 10 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            const unsubscribe = subscribeInstallState(state => {
+                const disabled = state === 'installed' || state === 'installing';
+                install.setText(state === 'installed' ? 'Installed' : state === 'installing' ? 'Installing…' : 'Install game');
+                install.setAlpha(disabled ? 0.6 : 1);
+                install.input.enabled = !disabled;
+            });
+            install.on('pointerup', () => { void requestInstall(); });
+            this.events.once('shutdown', unsubscribe);
+        });
 
         // ---- Flow the controls into 1 (portrait) or 2 (landscape) columns ----
         const numCols = portrait ? 1 : 2;

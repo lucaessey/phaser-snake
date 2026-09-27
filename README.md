@@ -1,3 +1,18 @@
+# Install Snake on your phone
+
+Play at **https://lucaessey.github.io/phaser-snake/**.
+
+On Android, open the link in Chrome and tap **Install game** on the title screen or in Settings. Accept the browser's install prompt. If Chrome does not offer the prompt, use its menu → Add to Home screen → Install. Avoid opening the game inside another app's embedded browser.
+
+On iPhone/iPad, open the same link in Safari → Share → Add to Home Screen. Keep **Open as Web App** enabled if shown.
+
+Open the game online once and wait for **Ready to play offline**. Its service worker caches the game and sprites so it can start offline. Updates show a prompt; **Later** keeps the current version, while **Update now** reloads the app. The game remains playable without installation.
+
+The GitHub Pages workflow deploys the production build from this repository's `main` branch. The manifest, icons, and service worker support the `/phaser-snake/` subfolder. Local development does not register a service worker.
+
+Use Node.js 22 or newer. Run `npm ci`, `npm test`, and `npm run build-nolog`. For phone installation and offline browser checks, run `npx playwright install chromium` and `npm run test:pwa`. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed Chromium/Chrome executable if needed. The existing AI opponent, game modes, skins, and high scores are preserved.
+
+---
 # Phaser Vite Template
 
 This is a Phaser 3 project template that uses Vite for bundling. It supports hot-reloading for quick development workflow and includes scripts to generate production-ready builds.
@@ -48,7 +63,7 @@ We have provided a default project structure to get you started. This is as foll
 | `src/main.js`                | Application bootstrap.                                     |
 | `src/game`                   | Folder containing the game code.                           |
 | `src/game/main.js`           | Game entry point: configures and starts the game.          |
-| `src/game/scenes`            | Folder with all Phaser game scenes.                        | 
+| `src/game/scenes`            | Folder with all Phaser game scenes.                        |
 
 ## Handling Assets
 

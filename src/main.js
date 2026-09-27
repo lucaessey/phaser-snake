@@ -1,7 +1,5 @@
 import StartGame from './game/main';
+import { setupPWA } from './pwa.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-
-    StartGame('game-container');
-
-});
+setupPWA();
+StartGame('game-container');

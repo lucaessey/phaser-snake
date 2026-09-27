@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
+import { pwa } from './pwa.mjs';
 
 export default defineConfig({
     base: './',
+    plugins: [pwa()],
     build: {
         rollupOptions: {
             output: {

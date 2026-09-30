@@ -6,29 +6,32 @@ import { clearHighScores, getAllHighScores } from './highscores';
 import { requestInstall, subscribeInstallState } from '../pwa';
 import { readMenuPreferences } from './menuPreferences';
 import { createMenuPreview } from './menuPreview';
+import { PROGRESS_KEY, getSkinProgress, canSaveSkinProgress, isSkinUnlocked, unlockProgress } from './skinProgress';
 
 const TAB_COPY = {
     home: ['ONE MORE ROUND', 'Ready, set, snake.', 'A little strategy. A lot of apples.', 'Your snake'],
     settings: ['YOUR RULES', 'Make it your game.', 'Set your pace. Pick your challenge.', 'Your setup'],
-    skins: ['A FRESH LOOK', 'Find your favorite.', 'Tap a skin to see it in action above.', 'Skin preview']
+    skins: ['A FRESH LOOK', 'Find your favorite.', 'Preview any skin. Earn it to play with it.', 'Skin preview']
 };
 const byId = id => document.getElementById(id);
 const entries = () => Object.values(getAllHighScores())
     .filter(entry => entry && typeof entry.label === 'string' && Number.isFinite(entry.score))
     .sort((a, b) => b.score - a.score);
 
-export function createMenu(scene, initialTab = 'home') {
+export function createMenu(scene, initialTab = 'home', newlyUnlocked = []) {
     const shell = byId('menu-shell');
     const scroll = byId('menu-scroll');
     const controller = new AbortController();
     const on = (node, type, handler) => node.addEventListener(type, handler, { signal: controller.signal });
-    const prefs = readMenuPreferences();
+    let progress = getSkinProgress();
+    const prefs = readMenuPreferences(progress);
+    let previewSkin = newlyUnlocked.find(id => isSkinUnlocked(id, progress)) || prefs.snakeSkin;
     const tabs = ['settings', 'home', 'skins'];
     let activeTab = 'home';
     shell.hidden = false;
     document.body.classList.add('menu-open');
     byId('game-container').inert = true;
-    const preview = createMenuPreview(scene, byId('snake-preview'), () => prefs);
+    const preview = createMenuPreview(scene, byId('snake-preview'), () => ({ ...prefs, snakeSkin: activeTab === 'skins' ? previewSkin : prefs.snakeSkin }));
 
     function selectTab(tab, focus = false) {
         if (!tabs.includes(tab)) tab = 'home';
@@ -48,7 +51,30 @@ export function createMenu(scene, initialTab = 'home') {
     }
 
     function refresh() {
-        const skin = SKINS.find(skin => skin.id === prefs.snakeSkin);
+        progress = getSkinProgress();
+        byId('collection-hint').textContent = 'Earn skins with total apples, high scores, and challenges. Every food counts. ' +
+            (canSaveSkinProgress() ? 'Progress saves on this device.' : 'Progress lasts for this session. Allow site storage to keep your rewards.');
+        const skin = SKINS.find(skin => skin.id === (activeTab === 'skins' ? previewSkin : prefs.snakeSkin));
+        const inspected = SKINS.find(skin => skin.id === previewSkin);
+        const unlock = unlockProgress(inspected, progress);
+        const equipped = prefs.snakeSkin === previewSkin;
+        byId('skin-detail-name').textContent = inspected.name;
+        byId('skin-category').textContent = unlock.category;
+        byId('skin-ownership').textContent = !unlock.unlocked ? 'Locked · Preview only' : equipped ? 'Equipped' : 'Unlocked';
+        byId('skin-ownership').dataset.locked = String(!unlock.unlocked);
+        byId('skin-requirement').textContent = unlock.description;
+        byId('skin-progress').max = unlock.target;
+        byId('skin-progress').value = unlock.unlocked ? unlock.target : unlock.value;
+        byId('skin-progress').setAttribute('aria-label', inspected.name + ' unlock progress');
+        const unit = inspected.unlock?.metric === 'totalApples' ? 'apples' : inspected.unlock?.metric === 'fruitfulRuns' ? 'games' : 'best score';
+        byId('skin-progress-text').textContent = unlock.unlocked ? 'Unlocked' : unlock.value + ' / ' + unlock.target + ' ' + unit;
+        byId('equip-skin').disabled = !unlock.unlocked || equipped;
+        byId('equip-skin').textContent = !unlock.unlocked ? 'Locked' : equipped ? 'Equipped' : 'Use skin';
+        byId('collection-count').textContent = progress.unlocked.length + ' / ' + SKINS.length + ' unlocked';
+        byId('collection-apples').textContent = progress.totalApples;
+        byId('collection-best').textContent = progress.bestScore;
+        byId('home-collection').textContent = progress.unlocked.length + ' / ' + SKINS.length + ' skins';
+        byId('home-apples').textContent = progress.totalApples + ' apples collected';
         byId('speed-value').value = prefs.snakeSpeed;
         byId('speed-down').disabled = prefs.snakeSpeed <= 1;
         byId('speed-up').disabled = prefs.snakeSpeed >= 20;
@@ -59,10 +85,17 @@ export function createMenu(scene, initialTab = 'home') {
         byId('home-best').textContent = entries()[0]?.score || 0;
         byId('preview-detail').textContent = activeTab === 'settings' ? `Speed ${prefs.snakeSpeed} · ${prefs.rivalEnabled ? RIVAL_DIFFICULTY[prefs.rivalDifficulty].name : 'Solo'}` : skin.name;
         for (const button of byId('skin-grid').children) {
-            button.setAttribute('aria-pressed', String(button.dataset.skin === prefs.snakeSkin));
+            const item = SKINS.find(skin => skin.id === button.dataset.skin);
+            const owned = isSkinUnlocked(item.id, progress);
+            const wearing = item.id === prefs.snakeSkin;
+            button.setAttribute('aria-pressed', String(item.id === previewSkin));
+            button.dataset.locked = String(!owned);
+            button.dataset.equipped = String(wearing);
+            button.querySelector('.skin-check').textContent = !owned ? '🔒' : wearing ? '✓' : '';
+            button.querySelector('.skin-status').textContent = !owned ? item.unlock.short : wearing ? 'Equipped' : 'Unlocked';
             if (button.dataset.skin === 'classic') preview.thumbnail(button.querySelector('canvas'), 'classic', prefs.snakeColorIndex);
         }
-        const classic = prefs.snakeSkin === 'classic';
+        const classic = previewSkin === 'classic';
         byId('color-name').textContent = SNAKE_COLORS[prefs.snakeColorIndex].name;
         byId('color-help').textContent = classic ? 'Choose a tint for the Classic skin.' : 'Select Classic to use these colors. Other skins have their own colors.';
         for (const button of byId('color-grid').children) {
@@ -110,10 +143,14 @@ export function createMenu(scene, initialTab = 'home') {
         name.textContent = skin.name;
         const check = document.createElement('span');
         check.className = 'skin-check'; check.textContent = '✓'; check.setAttribute('aria-hidden', 'true');
-        button.append(thumb, name, check);
+        const status = document.createElement('small');
+        status.className = 'skin-status'; status.id = 'skin-status-' + skin.id;
+        button.setAttribute('aria-describedby', status.id);
+        button.append(thumb, name, status, check);
         preview.thumbnail(thumb, skin.id, prefs.snakeColorIndex);
         on(button, 'click', () => {
-            save('snakeSkin', skin.id);
+            previewSkin = skin.id;
+            refresh();
             // Keep the live preview visible even when choosing a skin far down the list.
             scroll.scrollTo({ top: 0, behavior: 'instant' });
         });
@@ -130,6 +167,15 @@ export function createMenu(scene, initialTab = 'home') {
         on(button, 'click', () => { save('snakeColorIndex', index); scroll.scrollTo({ top: 0, behavior: 'instant' }); });
         return button;
     }));
+
+    on(window, 'storage', event => { if (event.key === PROGRESS_KEY || event.key === null) refresh(); });
+    on(byId('equip-skin'), 'click', () => {
+        if (isSkinUnlocked(previewSkin, progress)) save('snakeSkin', previewSkin);
+    });
+    on(byId('view-collection'), 'click', () => selectTab('skins'));
+    const earnedNames = newlyUnlocked.filter(id => isSkinUnlocked(id, progress)).map(id => SKINS.find(skin => skin.id === id).name);
+    byId('earned-notice').hidden = !earnedNames.length;
+    byId('earned-notice').textContent = earnedNames.length ? 'New skins earned: ' + earnedNames.join(', ') + '. Find them in Skins!' : '';
 
     on(byId('play-button'), 'click', () => {
         // Keep gameplay consistent with the validated values shown in the menu.

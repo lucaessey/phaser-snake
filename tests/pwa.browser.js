@@ -111,7 +111,7 @@ test('phone tabs separate settings and skins, preview selections, and preserve c
     await expect(page.getByLabel('Difficulty', { exact: true })).toBeDisabled();
     await page.getByRole('switch', { name: 'AI opponent', exact: false }).check();
     await page.getByRole('tab', { name: 'Skins', exact: true }).click();
-    await expect(page.locator('#skin-grid button')).toHaveCount(13);
+    await expect(page.locator('#skin-grid button')).toHaveCount(21);
     await page.getByRole('button', { name: 'Lava', exact: true }).click();
     await expect(page.locator('#snake-preview')).toHaveAttribute('data-skin', 'lava');
     await expect(page.locator('#preview-detail')).toHaveText('Lava');
@@ -152,6 +152,10 @@ test('phone tabs separate settings and skins, preview selections, and preserve c
 test('all skin previews match gameplay and keyboard navigation survives a game', async ({ page }) => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript(() => localStorage.setItem('snakeSkinProgressV1', JSON.stringify({
+        version: 1, totalApples: 250, bestScore: 25, fruitfulRuns: 3, spikesBest: 15,
+        teleportBest: 15, colorBest: 12, hardBest: 12, extraHardBest: 12, speedBest: 10, comboBest: 15
+    })));
     await ready(page);
     await page.getByRole('tab', { name: 'Home', exact: true }).focus();
     await page.keyboard.press('ArrowRight');
@@ -160,11 +164,15 @@ test('all skin previews match gameplay and keyboard navigation survives a game',
     for (const skin of skins) {
         await page.locator(`#skin-grid button[data-skin="${skin}"]`).click();
         await expect(page.locator('#snake-preview')).toHaveAttribute('data-skin', skin);
+        if (['tiger', 'watermelon', 'bee', 'bubblegum', 'aurora', 'circuit', 'dragon', 'galaxy'].includes(skin)) {
+            await page.locator('#snake-preview').screenshot({ path: 'test-results/skin-' + skin + '.png' });
+        }
         // A nonempty canvas thumbnail verifies the shared texture set rendered.
         expect(await page.locator(`#skin-grid button[data-skin="${skin}"] canvas`).evaluate(canvas => {
             const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
             return data.some((value, i) => i % 4 === 3 && value > 0);
         })).toBe(true);
+        if (await page.locator('#equip-skin').isEnabled()) await page.locator('#equip-skin').click();
         await page.getByRole('tab', { name: 'Home', exact: true }).click();
         await page.getByRole('button', { name: 'Play', exact: true }).click();
         await page.waitForFunction(() => window.__game.scene.isActive('Game'));
@@ -190,6 +198,8 @@ test('menus and gameplay remain usable when browser storage is blocked', async (
         Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Storage denied', 'SecurityError'); } });
     });
     await ready(page);
+    await page.getByRole('tab', { name: 'Skins', exact: true }).click();
+    await expect(page.locator('#collection-hint')).toContainText('Progress lasts for this session');
     await page.getByRole('tab', { name: 'Settings', exact: true }).click();
     await expect(page.locator('#speed-value')).toHaveText('5');
     await page.getByRole('tab', { name: 'Home', exact: true }).click();
@@ -197,4 +207,114 @@ test('menus and gameplay remain usable when browser storage is blocked', async (
     await page.waitForFunction(() => window.__game.scene.isActive('Game'));
     expect(await page.evaluate(() => !!window.__game.scene.getScene('Game').snake)).toBe(true);
     expect(errors).toEqual([]);
+});
+
+async function collectFood(page, apples) {
+    await page.evaluate(apples => {
+        const game = window.__game.scene.getScene('Game');
+        game.scene.pause(); // Advance food collisions deterministically, without racing animation frames.
+        for (let i = 0; i < apples; i++) {
+            const head = game.snake.gridCoords[0];
+            game.apple.setPosition(head.x, head.y);
+            game.resolveFood();
+        }
+    }, apples);
+}
+
+test('locked skins preview safely and apples earn permanent skins across offline reloads', async ({ browser }) => {
+    const context = await browser.newContext(devices['Pixel 7']);
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await ready(page);
+    await page.getByRole('tab', { name: 'Skins', exact: true }).click();
+    await expect(page.locator('#collection-count')).toHaveText('1 / 21 unlocked');
+    await page.getByRole('button', { name: 'Galaxy', exact: true }).click();
+    await expect(page.locator('#snake-preview')).toHaveAttribute('data-skin', 'galaxy');
+    await expect(page.locator('#skin-requirement')).toContainText('250 apples');
+    await expect(page.locator('#equip-skin')).toBeDisabled();
+    await expect(page.locator('#skin-ownership')).toContainText('Locked');
+    await page.screenshot({ path: 'test-results/android-locked-galaxy.png' });
+    // An old selected-skin preference cannot bypass the gameplay gate.
+    await page.evaluate(() => {
+        localStorage.setItem('snakeSkin', 'galaxy');
+        localStorage.setItem('foodType', 'sushi');
+        localStorage.setItem('rivalEnabled', 'false');
+        localStorage.setItem('ghostEnabled', 'false');
+        window.__game.scene.getScene('TitleScreen').scene.start('Game');
+    });
+    await page.waitForFunction(() => window.__game.scene.isActive('Game'));
+    expect(await page.evaluate(() => window.__game.scene.getScene('Game').playerSkin)).toBe('classic');
+    await collectFood(page, 3);
+    await page.evaluate(() => window.__game.scene.getScene('Game').gameOver());
+    await page.getByRole('tab', { name: 'Skins', exact: true }).click();
+    await page.getByRole('button', { name: 'Slime', exact: true }).click();
+    await expect(page.locator('#skin-progress-text')).toHaveText('3 / 5 apples');
+    await expect(page.locator('#equip-skin')).toBeDisabled();
+    await context.setOffline(true);
+    await page.reload();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.waitForFunction(() => window.__game.scene.isActive('Game'));
+    await collectFood(page, 2);
+    await expect(page.locator('#skin-unlock-toast')).toContainText('Slime');
+    // A cold reload mid-run keeps the collected apples; it does not count them again.
+    await page.reload();
+    await page.getByRole('tab', { name: 'Skins', exact: true }).click();
+    await page.getByRole('button', { name: 'Slime', exact: true }).click();
+    await expect(page.locator('#collection-apples')).toHaveText('5');
+    await expect(page.locator('#equip-skin')).toBeEnabled();
+    await page.locator('#equip-skin').click();
+    await expect(page.locator('#skin-ownership')).toHaveText('Equipped');
+    await page.screenshot({ path: 'test-results/android-earned-slime.png' });
+    await page.getByRole('tab', { name: 'Home', exact: true }).click();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.waitForFunction(() => window.__game.scene.isActive('Game'));
+    expect(await page.evaluate(() => window.__game.scene.getScene('Game').playerSkin)).toBe('slime');
+    await page.evaluate(() => {
+        const game = window.__game.scene.getScene('Game');
+        game.gameOver(); game.gameOver();
+    });
+    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Clear high scores', exact: true }).click();
+    await page.reload();
+    await page.getByRole('tab', { name: 'Skins', exact: true }).click();
+    await page.getByRole('button', { name: 'Slime', exact: true }).click();
+    await expect(page.locator('#skin-ownership')).toHaveText('Equipped');
+    await expect(page.locator('#collection-apples')).toHaveText('5');
+    expect(errors).toEqual([]);
+    await context.close();
+});
+
+test('mixed challenges use the run settings and celebrate earned skins after a game', async ({ page }) => {
+    await ready(page);
+    await page.getByRole('tab', { name: 'Settings', exact: true }).click();
+    await page.getByLabel('Difficulty', { exact: true }).selectOption('extraHard');
+    for (const mode of ['Spikes', 'Teleport', 'Color shuffle']) await page.getByRole('switch', { name: mode, exact: false }).check();
+    for (let i = 0; i < 5; i++) await page.getByRole('button', { name: 'Increase speed' }).click();
+    await page.getByRole('tab', { name: 'Home', exact: true }).click();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
+    await page.waitForFunction(() => window.__game.scene.isActive('Game'));
+    // The rival eating food must not earn player rewards.
+    expect(await page.evaluate(() => {
+        const game = window.__game.scene.getScene('Game');
+        game.scene.pause();
+        const rivalHead = game.rival.gridCoords[0];
+        game.apple.setPosition(rivalHead.x, rivalHead.y);
+        game.resolveFood();
+        return JSON.parse(localStorage.getItem('snakeSkinProgressV1')).totalApples;
+    })).toBe(0);
+    await collectFood(page, 15);
+    const progress = await page.evaluate(() => JSON.parse(localStorage.getItem('snakeSkinProgressV1')));
+    expect(progress).toMatchObject({ totalApples: 15, bestScore: 15, comboBest: 15, extraHardBest: 15, speedBest: 15 });
+    expect(progress.unlocked).toEqual(expect.arrayContaining(['slime', 'black', 'brainrot', 'pixel', 'neon', 'lava', 'watermelon', 'bee', 'robot', 'circuit', 'aurora', 'dragon']));
+    expect(progress.unlocked).not.toContain('tiger');
+    expect(progress.unlocked).not.toContain('galaxy');
+    await page.evaluate(() => window.__game.scene.getScene('Game').gameOver());
+    await expect(page.locator('#earned-notice')).toContainText('Jade Dragon');
+    await page.getByRole('tab', { name: 'Skins', exact: true }).click();
+    await page.getByRole('button', { name: 'Jade Dragon', exact: true }).click();
+    await expect(page.locator('#equip-skin')).toBeEnabled();
+    await page.locator('#equip-skin').click();
+    await page.reload();
+    await expect(page.locator('#preview-detail')).toHaveText('Jade Dragon');
 });

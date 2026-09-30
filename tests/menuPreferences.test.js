@@ -9,7 +9,7 @@ function stored(values) {
 describe('menu preferences', () => {
     it('preserves choices from the previous settings screen', () => {
         stored({ snakeSkin: 'lava', snakeColorIndex: '3', snakeSpeed: '12', rivalDifficulty: 'extraHard', rivalEnabled: 'false', modeSpikes: 'true', foodType: 'sushi' });
-        expect(readMenuPreferences()).toMatchObject({ snakeSkin: 'lava', snakeColorIndex: 3, snakeSpeed: 12, rivalDifficulty: 'extraHard', rivalEnabled: false, modeSpikes: true, foodType: 'sushi' });
+        expect(readMenuPreferences({ unlocked: ['classic', 'lava'] })).toMatchObject({ snakeSkin: 'lava', snakeColorIndex: 3, snakeSpeed: 12, rivalDifficulty: 'extraHard', rivalEnabled: false, modeSpikes: true, foodType: 'sushi' });
     });
     it('recovers from invalid saved options and clamps speed', () => {
         stored({ snakeSkin: 'missing', snakeColorIndex: '-2', snakeSpeed: '999', foodType: 'missing', gridSize: 'huge', rivalDifficulty: 'impossible' });

@@ -16,7 +16,7 @@ export class TitleScreen extends Scene {
         // Release the arrow keys captured by gameplay so native menu controls work.
         this.input.keyboard.clearCaptures();
         for (const skin of SKINS) createSkinTextures(this, skin.id);
-        const dispose = createMenu(this, data.tab || 'home');
+        const dispose = createMenu(this, data.tab || 'home', data.unlocked || []);
         this.events.once('shutdown', dispose);
     }
 }

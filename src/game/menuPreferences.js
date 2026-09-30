@@ -1,5 +1,6 @@
 import { safeGetItem } from './storage';
 import { SKINS } from './skins';
+import { availableSkin, getSkinProgress } from './skinProgress';
 import { SNAKE_COLORS } from './Snake';
 
 const choice = (key, allowed, fallback) => {
@@ -11,13 +12,13 @@ const toggle = (key, fallback) => {
     return value === null ? fallback : value === 'true';
 };
 
-export function readMenuPreferences() {
+export function readMenuPreferences(progress = getSkinProgress()) {
     const speed = Number.parseInt(safeGetItem('snakeSpeed'), 10);
     const color = Number.parseInt(safeGetItem('snakeColorIndex'), 10);
     return {
         snakeSpeed: Number.isFinite(speed) ? Math.max(1, Math.min(20, speed)) : 5,
         snakeColorIndex: Number.isInteger(color) && color >= 0 && color < SNAKE_COLORS.length ? color : 0,
-        snakeSkin: choice('snakeSkin', SKINS.map(skin => skin.id), 'classic'),
+        snakeSkin: availableSkin(choice('snakeSkin', SKINS.map(skin => skin.id), 'classic'), progress),
         foodType: choice('foodType', ['apple', 'banana', 'eggplant', 'jerry', 'sushi'], 'apple'),
         gridSize: choice('gridSize', ['auto', 'small', 'medium', 'large'], 'auto'),
         rivalDifficulty: choice('rivalDifficulty', ['easy', 'medium', 'hard', 'extraHard'], 'medium'),

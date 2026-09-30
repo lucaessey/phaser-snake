@@ -113,3 +113,37 @@ dialog li::marker { color: var(--lime); font-weight: bold; }
 @media (max-width: 359px) { .menu-content { padding-left: 14px; padding-right: 14px; } .run-summary { padding: 15px; gap: 10px; } .best-score { padding-left: 12px; } .run-summary .eyebrow { font-size: 9px; letter-spacing: 1px; } .skin-grid { gap: 7px; } .color-grid { grid-template-columns: repeat(4, 1fr); } .setting-row { margin: 0 14px; gap: 8px; } }
 @media (max-height: 600px) and (min-width: 600px) { .menu-content { padding-top: max(12px, env(safe-area-inset-top)); } .menu-header { margin-bottom: 12px; } .page-heading { margin-bottom: 16px; } #snake-preview { min-height: 100px; max-height: 130px; object-fit: contain; } .bottom-nav { padding-top: 4px; } .bottom-nav button { min-height: 48px; gap: 2px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+
+/* Skin collection and earned rewards. Locked skins can be previewed. */
+.collection-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-top: 14px; padding: 16px 18px; text-align: left; background: #1d3324; }
+.collection-button > span:first-child { display: flex; flex-direction: column; gap: 6px; }
+.collection-button strong { font-size: 16px; }
+#home-apples { color: var(--muted); font-size: 12px; font-weight: 400; margin-left: auto; }
+.unlock-detail { padding: 18px; border: 1px solid #486648; border-radius: 16px; background: #203527; margin-bottom: 18px; }
+.unlock-detail .section-heading { align-items: center; margin-bottom: 10px; }
+#skin-category { margin-bottom: 5px; color: #b9d4a6; font-size: 9px; }
+#skin-ownership { color: var(--lime); font-weight: 650; font-size: 11px; }
+#skin-ownership[data-locked="true"] { color: #ebcd8a; }
+#skin-requirement { color: #c3d1c1; font-size: 13px; line-height: 1.5; }
+#skin-progress-row { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+#skin-progress { appearance: none; width: 100%; min-width: 30px; height: 7px; border: none; border-radius: 8px; overflow: hidden; background: #102318; color: var(--lime); }
+#skin-progress::-webkit-progress-bar { background: #102318; border-radius: 8px; }
+#skin-progress::-webkit-progress-value { background: var(--lime); border-radius: 8px; }
+#skin-progress::-moz-progress-bar { background: var(--lime); border-radius: 8px; }
+#skin-progress-text { flex-shrink: 0; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+#equip-skin { width: 100%; min-height: 42px; background: var(--lime); color: #20321d; border-color: var(--lime); }
+#equip-skin:disabled { background: #2c4431; color: #bfd1b7; border-color: #41583e; opacity: 1; }
+.collection-stats { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 9px; color: var(--muted); font-size: 12px; }
+.collection-stats strong { color: var(--lime); font-size: 16px; margin-right: 3px; }
+.collection-hint { color: var(--muted); font-size: 12px; line-height: 1.5; margin-bottom: 20px; }
+.skin-card { gap: 5px; padding-top: 18px; }
+.skin-status { font-size: 9px; color: #adc49f; line-height: 1.4; font-weight: 400; }
+.skin-card[data-locked="true"] { background: #192d21; }
+.skin-card[data-locked="true"] .skin-status { color: #c6b791; }
+.skin-card[aria-pressed="true"] { background: #30472a; }
+.skin-card[aria-pressed="true"] .skin-check { display: none; }
+.skin-card[data-locked="true"] .skin-check, .skin-card[data-equipped="true"] .skin-check { display: block; }
+.skin-card[data-locked="true"] .skin-check { background: #233b29; color: #e8c989; width: 19px; height: 19px; line-height: 19px; }
+.earned-notice { color: #d9fab3; border: 1px solid #71944f; border-radius: 12px; padding: 13px 16px; background: #2b4527; font-size: 13px; line-height: 1.5; margin-bottom: 16px; }
+#skin-unlock-toast { position: fixed; z-index: 12; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); padding: 13px 20px; border: 1px solid var(--lime); border-radius: 14px; color: var(--lime); background: #182d20ed; box-shadow: 0 6px 20px #0006; font-size: 14px; font-weight: 700; text-align: center; pointer-events: none; }
+@media (min-width: 600px) { .skin-status { font-size: 11px; } }

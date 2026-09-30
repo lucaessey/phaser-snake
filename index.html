@@ -29,9 +29,11 @@
                     <figcaption><span><span class="live-dot" aria-hidden="true"></span><span id="preview-label">Your snake</span></span><span id="preview-detail">Classic</span></figcaption>
                 </figure>
                 <section id="panel-home" role="tabpanel" aria-labelledby="tab-home" tabindex="0">
+                    <p id="earned-notice" class="earned-notice" role="status" hidden></p>
                     <button id="play-button" class="primary-button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg> Play</button>
                     <p class="play-hint">Swipe to turn · Use arrow keys on a keyboard</p>
                     <div class="run-summary"><div><span class="eyebrow">YOUR CHALLENGE</span><strong id="home-challenge">Medium rival</strong><span id="home-setup">Speed 5 · Auto grid</span></div><div class="best-score"><span class="eyebrow">PERSONAL BEST</span><strong id="home-best">0</strong><span>across all setups</span></div></div>
+                    <button id="view-collection" class="collection-button"><span><span class="eyebrow">YOUR COLLECTION</span><strong id="home-collection">1 / 21 skins</strong></span><span id="home-apples">0 apples collected</span><span aria-hidden="true">→</span></button>
                     <div id="pwa-tools"><button id="install-button" class="secondary-button">Install game</button><span id="offline-status" role="status"></span></div>
                 </section>
                 <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0" hidden>
@@ -56,13 +58,21 @@
                     <section class="settings-group" aria-labelledby="app-heading">
                         <h2 id="app-heading">App &amp; saved games</h2>
                         <div class="setting-row app-row"><div><strong>Take Snake with you</strong><p>Add it to your home screen.</p></div><button id="settings-install" class="secondary-button">Install game</button></div>
-                        <div class="setting-row app-row"><div><strong>High scores</strong><p>Clears your scores and ghost replay.</p></div><button id="clear-scores" class="text-button danger-button">Clear high scores</button></div>
+                        <div class="setting-row app-row"><div><strong>High scores</strong><p>Clears scores and ghost replay. Earned skins stay unlocked.</p></div><button id="clear-scores" class="text-button danger-button">Clear high scores</button></div>
                         <p id="settings-message" role="status"></p>
                     </section>
                     <footer class="creator-links"><p>More by this creator</p><a href="https://lucaessey.github.io/wordventure/" target="_blank" rel="noopener noreferrer">Wordventure ↗</a><a href="https://lucaessey.github.io/Boggle/" target="_blank" rel="noopener noreferrer">Boggle ↗</a></footer>
                 </section>
                 <section id="panel-skins" role="tabpanel" aria-labelledby="tab-skins" tabindex="0" hidden>
-                    <div class="section-heading"><h2>Choose your snake</h2><span>13 skins · All unlocked</span></div>
+                    <section id="skin-unlock-detail" class="unlock-detail" aria-labelledby="skin-detail-name">
+                        <div class="section-heading"><div><p id="skin-category" class="eyebrow">Starter</p><h2 id="skin-detail-name">Classic</h2></div><span id="skin-ownership">Equipped</span></div>
+                        <p id="skin-requirement">Your first snake. Ready to play from the start.</p>
+                        <div id="skin-progress-row"><progress id="skin-progress" max="1" value="1" aria-label="Skin unlock progress"></progress><span id="skin-progress-text">Unlocked</span></div>
+                        <button id="equip-skin" class="secondary-button" disabled>Equipped</button>
+                    </section>
+                    <div class="collection-stats"><span><strong id="collection-apples">0</strong> apples collected</span><span><strong id="collection-best">0</strong> best score</span></div>
+                    <p id="collection-hint" class="collection-hint">Earn skins with total apples, high scores, and challenges. Every food counts. Progress saves on this device.</p>
+                    <div class="section-heading"><h2>Choose your snake</h2><span id="collection-count">1 / 21 unlocked</span></div>
                     <div id="skin-grid" class="skin-grid" role="group" aria-label="Snake skins"></div>
                     <section class="settings-group color-group" aria-labelledby="color-heading"><div class="section-heading"><h2 id="color-heading">Classic colors</h2><span id="color-name">Classic</span></div><p id="color-help">Choose a tint for the Classic skin.</p><div id="color-grid" class="color-grid" role="group" aria-label="Classic snake colors" aria-describedby="color-help"></div></section>
                 </section>
@@ -76,6 +86,7 @@
             </div>
         </nav>
     </main>
+    <aside id="skin-unlock-toast" role="status" hidden></aside>
     <aside id="update-notice" role="status" hidden><p>An update is ready. Updating starts a new game.</p><button id="update-button">Update now</button><button id="dismiss-update">Later</button></aside>
     <dialog id="scores-dialog" aria-labelledby="scores-title"><h2 id="scores-title">High scores</h2><p class="muted">Your best run for each game setup.</p><div id="scores-list"></div><button id="scores-close" class="secondary-button" autofocus>Done</button></dialog>
     <dialog id="install-guide" aria-labelledby="install-guide-title" aria-describedby="install-guide-note"><h2 id="install-guide-title">Install Snake</h2><ol id="install-guide-steps"></ol><p id="install-guide-note"></p><button id="install-guide-close" autofocus>Got it</button></dialog>

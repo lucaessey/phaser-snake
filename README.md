@@ -14,9 +14,17 @@ Use Node.js 22 or newer. Run `npm ci`, `npm test`, and `npm run build-nolog`. Fo
 
 ## Game menu
 
-The bottom tabs are **Settings**, **Home**, and **Skins**. Home starts a game and shows your current challenge. Settings groups speed, food, grid, rival difficulty, ghost replay, game modes, installation, and saved scores. Skins has all 13 styles, their live preview, and Classic color tints. Choices are saved on the device. The tabs disappear during a game and return afterward.
+The bottom tabs are **Settings**, **Home**, and **Skins**. Home starts a game and shows your current challenge. Settings groups speed, food, grid, rival difficulty, ghost replay, game modes, installation, and saved scores. Skins has 21 styles, live previews, and Classic color tints. Classic is available from the start; every other skin is earned. Choices are saved on the device. The tabs disappear during a game and return afterward.
 
-The menu supports touch, keyboard navigation, small screens, and rotation. Skin previews and gameplay share their texture generator. Browser checks cover installation, offline starts, all skins, saved settings, and navigation.
+The menu supports touch, keyboard navigation, small screens, and rotation. Skin previews and gameplay share their texture generator. Browser checks cover installation, offline starts, all skins, saved settings, navigation, and earning/equipping rewards.
+
+### Earn skins
+
+- Collect apples across games for Slime, Pixel 8-bit, Candy Cane, Ice, Bubblegum, Gold, and Galaxy. All food types count; rival pickups do not.
+- Set single-game scores for Black 6/7, Numbers, Neon, Rainbow, and Tiger. Existing high scores count toward these rewards.
+- Complete challenges for Tung Tung Sahur, Watermelon, Lava, Bumblebee, Robot, Aurora, Cyber Circuit, and Jade Dragon. Tap a skin to see its exact goal and current progress.
+
+Locked skins can be previewed; **Use skin** is available after earning them. Rewards are permanent on this device, saved after each apple, and kept when clearing high scores. If browser storage is unavailable, rewards last for the current session and the collection shows a notice. Settings are captured at the start of each run so difficulty and mode challenges use the actual game setup.
 
 ---
 # Phaser Vite Template

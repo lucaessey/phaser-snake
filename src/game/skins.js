@@ -1,22 +1,233 @@
 // Selectable snake skins. 'classic' uses the loaded PNG sprites; other skins
 // generate their own texture set at runtime (see createSkinTextures).
 export const SKINS = [
-    { id: 'classic', name: 'Classic' },
-    { id: 'ttt', name: 'Tung Tung Sahur' },
-    { id: 'black', name: 'Black 6/7' },
-    { id: 'brainrot', name: 'Numbers' },
-    { id: 'slime', name: 'Slime' },
-    { id: 'pixel', name: 'Pixel 8-bit' },
-    { id: 'neon', name: 'Neon' },
-    { id: 'candy', name: 'Candy Cane' },
-    { id: 'rainbow', name: 'Rainbow' },
-    { id: 'lava', name: 'Lava' },
-    { id: 'ice', name: 'Ice' },
-    { id: 'gold', name: 'Gold' },
-    { id: 'robot', name: 'Robot' }
+    {
+        "id": "classic",
+        "name": "Classic"
+    },
+    {
+        "id": "slime",
+        "name": "Slime",
+        "unlock": {
+            "metric": "totalApples",
+            "target": 5,
+            "description": "Collect 5 apples across any games.",
+            "short": "5 apples total",
+            "category": "Collector"
+        }
+    },
+    {
+        "id": "black",
+        "name": "Black 6/7",
+        "unlock": {
+            "metric": "bestScore",
+            "target": 7,
+            "description": "Score 7 in a single game.",
+            "short": "Score 7",
+            "category": "High score"
+        }
+    },
+    {
+        "id": "pixel",
+        "name": "Pixel 8-bit",
+        "unlock": {
+            "metric": "totalApples",
+            "target": 15,
+            "description": "Collect 15 apples across any games.",
+            "short": "15 apples total",
+            "category": "Collector"
+        }
+    },
+    {
+        "id": "brainrot",
+        "name": "Numbers",
+        "unlock": {
+            "metric": "bestScore",
+            "target": 10,
+            "description": "Score 10 in a single game.",
+            "short": "Score 10",
+            "category": "High score"
+        }
+    },
+    {
+        "id": "ttt",
+        "name": "Tung Tung Sahur",
+        "unlock": {
+            "metric": "fruitfulRuns",
+            "target": 3,
+            "description": "Finish 3 games with at least 1 apple in each.",
+            "short": "3 fruitful games",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "candy",
+        "name": "Candy Cane",
+        "unlock": {
+            "metric": "totalApples",
+            "target": 30,
+            "description": "Collect 30 apples across any games.",
+            "short": "30 apples total",
+            "category": "Collector"
+        }
+    },
+    {
+        "id": "watermelon",
+        "name": "Watermelon",
+        "unlock": {
+            "metric": "teleportBest",
+            "target": 8,
+            "description": "Score 8 in one game with Teleport turned on.",
+            "short": "Teleport · Score 8",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "lava",
+        "name": "Lava",
+        "unlock": {
+            "metric": "spikesBest",
+            "target": 8,
+            "description": "Score 8 in one game with Spikes turned on.",
+            "short": "Spikes · Score 8",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "neon",
+        "name": "Neon",
+        "unlock": {
+            "metric": "bestScore",
+            "target": 15,
+            "description": "Score 15 in a single game.",
+            "short": "Score 15",
+            "category": "High score"
+        }
+    },
+    {
+        "id": "ice",
+        "name": "Ice",
+        "unlock": {
+            "metric": "totalApples",
+            "target": 60,
+            "description": "Collect 60 apples across any games.",
+            "short": "60 apples total",
+            "category": "Collector"
+        }
+    },
+    {
+        "id": "bee",
+        "name": "Bumblebee",
+        "unlock": {
+            "metric": "speedBest",
+            "target": 10,
+            "description": "Score 10 in one game at speed 10 or higher.",
+            "short": "Speed 10+ · Score 10",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "robot",
+        "name": "Robot",
+        "unlock": {
+            "metric": "hardBest",
+            "target": 12,
+            "description": "Score 12 with a Hard or Extra Hard AI opponent.",
+            "short": "Hard rival · Score 12",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "rainbow",
+        "name": "Rainbow",
+        "unlock": {
+            "metric": "bestScore",
+            "target": 20,
+            "description": "Score 20 in a single game.",
+            "short": "Score 20",
+            "category": "High score"
+        }
+    },
+    {
+        "id": "bubblegum",
+        "name": "Bubblegum",
+        "unlock": {
+            "metric": "totalApples",
+            "target": 100,
+            "description": "Collect 100 apples across any games.",
+            "short": "100 apples total",
+            "category": "Collector"
+        }
+    },
+    {
+        "id": "aurora",
+        "name": "Aurora",
+        "unlock": {
+            "metric": "colorBest",
+            "target": 12,
+            "description": "Score 12 in one game with Color shuffle turned on.",
+            "short": "Color shuffle · Score 12",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "tiger",
+        "name": "Tiger",
+        "unlock": {
+            "metric": "bestScore",
+            "target": 25,
+            "description": "Score 25 in a single game.",
+            "short": "Score 25",
+            "category": "High score"
+        }
+    },
+    {
+        "id": "gold",
+        "name": "Gold",
+        "unlock": {
+            "metric": "totalApples",
+            "target": 150,
+            "description": "Collect 150 apples across any games.",
+            "short": "150 apples total",
+            "category": "Collector"
+        }
+    },
+    {
+        "id": "circuit",
+        "name": "Cyber Circuit",
+        "unlock": {
+            "metric": "extraHardBest",
+            "target": 12,
+            "description": "Score 12 with an Extra Hard AI opponent.",
+            "short": "Extra Hard · Score 12",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "dragon",
+        "name": "Jade Dragon",
+        "unlock": {
+            "metric": "comboBest",
+            "target": 15,
+            "description": "Score 15 with both Spikes and Teleport turned on.",
+            "short": "Spikes + Teleport · 15",
+            "category": "Challenge"
+        }
+    },
+    {
+        "id": "galaxy",
+        "name": "Galaxy",
+        "unlock": {
+            "metric": "totalApples",
+            "target": 250,
+            "description": "Collect 250 apples across any games.",
+            "short": "250 apples total",
+            "category": "Collector"
+        }
+    }
 ];
 
-const FANCY_SKINS = ['neon', 'candy', 'rainbow', 'lava', 'ice', 'gold', 'robot'];
+const FANCY_SKINS = ['neon', 'candy', 'rainbow', 'lava', 'ice', 'gold', 'robot', 'watermelon', 'bee', 'bubblegum', 'aurora', 'tiger', 'circuit', 'dragon', 'galaxy'];
 
 // The 'brainrot' skin puts one of these character images on each white block,
 // chosen at random per block. Drop the PNGs in public/assets/ with these names;
@@ -543,9 +754,96 @@ class SkinTextureFactory {
         g.destroy();
     }
 
-    // The seven pattern skins, defined by compact configs.
+    // Pattern skins share directional geometry so previews match gameplay.
     createFancySkin(skinId) {
+        const pattern = (base, outline, paint) => (g, R, m, orientation) => {
+            this._bandsBar(g, R, m, orientation, [base], outline);
+            const point = (x, y) => orientation === 'h' ? [x, y] : [y, x];
+            const dot = (x, y, radius, color) => { g.fillStyle(color, 1); g.fillCircle(...point(x, y), radius); };
+            const rect = (x, y, width, height, color) => {
+                g.fillStyle(color, 1);
+                if (orientation === 'h') g.fillRect(x, y, width, height);
+                else g.fillRect(y, x, height, width);
+            };
+            const triangle = (x1, y1, x2, y2, x3, y3, color) => {
+                g.fillStyle(color, 1); g.fillTriangle(...point(x1, y1), ...point(x2, y2), ...point(x3, y3));
+            };
+            paint({ dot, rect, triangle, R, m });
+        };
         const configs = {
+            tiger: {
+                base: 0xffa231, outline: 0x372117, cornerColor: 0xdf7922, eyeW: 0xffedbb, eyeP: 0x261c14,
+                body: pattern(0xffa231, 0x372117, ({ triangle, m, R }) => {
+                    for (const x of [3, 30, 57]) {
+                        triangle(x, m, x + 13, m, x + 5, 30, 0x302320);
+                        triangle(x + 5, R - m, x + 18, R - m, x + 14, 34, 0x302320);
+                    }
+                })
+            },
+            bubblegum: {
+                base: 0xf787c6, outline: 0x8e3f82, cornerColor: 0xe86fad, eyeP: 0x77345e,
+                body: pattern(0xf787c6, 0x8e3f82, ({ dot }) => {
+                    [[14, 20, 8], [43, 42, 11], [59, 19, 5]].forEach(([x,y,r]) => {
+                        dot(x,y,r,0x9aebef); dot(x-2,y-3,2.5,0xeeffff);
+                    });
+                    dot(20,45,4,0xffc3e7);
+                })
+            },
+            circuit: {
+                base: 0x142e36, outline: 0x57f5aa, cornerColor: 0x1f4450, eyeP: 0x47ffc2, eyeGlow: 0x47ffc2,
+                body: pattern(0x142e36, 0x57f5aa, ({ dot, rect }) => {
+                    rect(0,19,25,3,0x57f5aa); rect(23,19,3,15,0x57f5aa); rect(23,32,41,3,0x57f5aa);
+                    rect(0,45,45,2,0x47bbd9); rect(43,40,2,7,0x47bbd9);
+                    [[9,20],[25,33],[53,33],[43,45]].forEach(([x,y]) => { dot(x,y,4,0x8bffcc); dot(x,y,1.5,0x1b4948); });
+                })
+            },
+            galaxy: {
+                base: 0x392971, outline: 0x9b81ef, cornerColor: 0x503081, eyeP: 0xc9e9ff, eyeGlow: 0x9673ff,
+                body: pattern(0x392971, 0x9b81ef, ({ dot, rect }) => {
+                    dot(18,29,17,0x52358b); dot(42,38,14,0x354688); dot(56,19,10,0x6750a6);
+                    [[8,17],[25,43],[48,17],[59,46]].forEach(([x,y]) => dot(x,y,1.6,0xf4edff));
+                    rect(33,16,2,12,0xffe4a1); rect(28,21,12,2,0xffe4a1);
+                })
+            },
+            dragon: {
+                base: 0x379b74, outline: 0x143d37, cornerColor: 0x287c60, headFill: 0x64ba80, eyeW: 0xffdc78, eyeP: 0x3d2920,
+                body: pattern(0x379b74, 0x143d37, ({ dot, triangle }) => {
+                    for (const x of [4,25,46]) for (const y of [19,41]) {
+                        dot(x,y,9,0x1d6555); dot(x,y-2,7,0x65bf81);
+                    }
+                    for (const x of [9,37]) triangle(x,8,x+13,8,x+7,21,0xf4cf6c);
+                }),
+                headExtra: (g,R,m,fx,fy) => {
+                    this._eyes(g,R,fx,fy,0xffdc78,0x3d2920);
+                    const point = (forward, side) => [R/2 + fx*forward - fy*side, R/2 + fy*forward + fx*side];
+                    g.fillStyle(0xf4cf6c,1);
+                    for (const side of [-1,1]) g.fillTriangle(...point(-14,side*10),...point(-22,side*26),...point(-2,side*17));
+                }
+            },
+            watermelon: {
+                base: 0xf4777c, outline: 0x267647, cornerColor: 0xef7b80, eyeP: 0x3c2630,
+                body: (g,R,m,orientation) => {
+                    this._bandsBar(g,R,m,orientation,[0x49b561,0xe4efb0,0xf4777c,0xf4777c,0xe4efb0,0x49b561],0x267647);
+                    g.fillStyle(0x462933,1);
+                    [[13,28],[34,37],[55,28]].forEach(([x,y]) => g.fillEllipse(orientation === 'h' ? x : y, orientation === 'h' ? y : x, orientation === 'h' ? 4 : 7, orientation === 'h' ? 7 : 4));
+                }
+            },
+            bee: {
+                base: 0xffd858, outline: 0x3a2c22, cornerColor: 0xf3b83f, eyeP: 0x332b24,
+                body: pattern(0xffd858,0x3a2c22,({ rect, dot, m, R }) => {
+                    for (const x of [11,41]) rect(x,m,13,R-2*m,0x332b24);
+                    dot(15,15,5,0xaee6ee); dot(45,15,5,0xaee6ee);
+                })
+            },
+            aurora: {
+                base: 0xa18cf1, outline: 0x44376b, cornerColor: 0x6ebfae, eyeP: 0x524174, eyeGlow: 0x7bffe2,
+                body: (g,R,m,orientation) => {
+                    this._bandsBar(g,R,m,orientation,[0x89f2cd,0x58cbb8,0x70a4de,0xa18cf1,0xe8a3df],0x44376b);
+                    g.fillStyle(0xd8fff1,0.7);
+                    if (orientation === 'h') { g.fillTriangle(9,m,18,m,5,R-m); g.fillTriangle(42,m,49,m,37,R-m); }
+                    else { g.fillTriangle(m,9,m,18,R-m,5); g.fillTriangle(m,42,m,49,R-m,37); }
+                }
+            },
             // Dark segments with a glowing cyan outline; glowing eyes.
             neon: {
                 m: 6, base: 0x0b0b1a, cornerColor: 0x0b0b1a, outline: 0x00e6ff,
@@ -570,7 +868,7 @@ class SkinTextureFactory {
             },
             // Rainbow lanes.
             rainbow: {
-                m: 6, bands: [0xff3b30, 0xff9500, 0xffd60a, 0x34c759, 0x0a84ff, 0x5e5ce6, 0xbf5af2],
+                m: 6, base: 0x5e5ce6, bands: [0xff3b30, 0xff9500, 0xffd60a, 0x34c759, 0x0a84ff, 0x5e5ce6, 0xbf5af2],
                 cornerColor: 0x5e5ce6, outline: 0x141425, headFill: 0xff3b30, eyeW: 0xffffff, eyeP: 0x222222
             },
             // Orange→red gradient with ember flecks.

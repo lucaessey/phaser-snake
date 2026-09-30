@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import { SKINS, createSkinTextures } from '../skins';
+import { createSkinTextures } from '../skins';
 import { preloadSnakeAssets } from '../snakeAssets';
 export { SKINS } from '../skins';
 import { Snake, SNAKE_COLORS } from '../Snake';
@@ -8,6 +8,7 @@ import { safeGetItem, safeSetItem, safeRemoveItem } from '../storage';
 import { getHighScore, saveHighScore } from '../highscores';
 import { currentLayout } from '../layout';
 import { swipeToDirection } from '../input';
+import { availableSkin, recordSkinApple, finishSkinRun } from '../skinProgress';
 
 // Grid tile size (in pixels). Computed each game from the device size and the
 // chosen grid density (see layout.js) so the grid fills any screen cleanly.
@@ -75,8 +76,7 @@ export class Game extends Scene
         this.spikes = [];
 
         // Player skin (cosmetic; rival always uses the classic set).
-        this.playerSkin = SKINS.some(s => s.id === safeGetItem('snakeSkin'))
-            ? safeGetItem('snakeSkin') : 'classic';
+        this.playerSkin = availableSkin(safeGetItem('snakeSkin'));
 
         // Rival state
         this.rival = null;
@@ -90,6 +90,15 @@ export class Game extends Scene
         this.rivalSpeedFactor = RIVAL_DIFFICULTY[this.rivalDifficultyKey].speedFactor || 1;
         this.rivalMoveAccum = 0;
 
+        this.runEnded = false;
+        this.runUnlocked = new Set();
+        this.skinToastTimer = null;
+        this.progressRun = {
+            rivalEnabled: this.rivalEnabled, difficulty: this.rivalDifficultyKey,
+            speed: parseInt(safeGetItem('snakeSpeed')) || 5,
+            spikes: this.modeSpikes, teleport: this.modeTeleport, colorShuffle: this.modeColorShuffle
+        };
+        this.events.once('shutdown', () => { document.getElementById('skin-unlock-toast').hidden = true; });
         this.score = 0;
         this.scoreText = this.add.text(10, 10, 'Score: 0', { fontFamily: 'Arial', fontSize: 24, color: '#ffffff' });
 
@@ -448,7 +457,9 @@ export class Game extends Scene
     }
 
     eatApple() {
+        if (this.runEnded || this.snake.dead) return;
         this.addScore(1);
+        this.showSkinRewards(recordSkinApple({ ...this.progressRun, score: this.score }));
         this.snake.grow();
 
         if (this.modeTeleport) {
@@ -830,9 +841,22 @@ export class Game extends Scene
         }
     }
 
+    showSkinRewards(rewards) {
+        if (!rewards.length) return;
+        rewards.forEach(skin => this.runUnlocked.add(skin.id));
+        const toast = document.getElementById('skin-unlock-toast');
+        toast.textContent = 'Skin unlocked! ' + rewards.map(skin => skin.name).join(' · ');
+        toast.hidden = false;
+        this.skinToastTimer?.remove();
+        this.skinToastTimer = this.time.delayedCall(2600, () => { toast.hidden = true; });
+    }
+
     gameOver() {
+        if (this.runEnded) return;
+        this.runEnded = true;
+        this.showSkinRewards(finishSkinRun(this.score));
         this.saveGhostIfBest();
-        this.scene.start('TitleScreen');
+        this.scene.start('TitleScreen', { unlocked: [...this.runUnlocked] });
     }
 
     update(time, delta) {

@@ -2,7 +2,7 @@
 
 Play at **https://lucaessey.github.io/phaser-snake/**.
 
-On Android, open the link in Chrome and tap **Install game** on the title screen or in Settings. Accept the browser's install prompt. If Chrome does not offer the prompt, use its menu → Add to Home screen → Install. Avoid opening the game inside another app's embedded browser.
+On Android, open the link in Chrome and tap **Install game** on Home or in Settings. Accept the browser's install prompt. If Chrome does not offer the prompt, use its menu → Add to Home screen → Install. Avoid opening the game inside another app's embedded browser.
 
 On iPhone/iPad, open the same link in Safari → Share → Add to Home Screen. Keep **Open as Web App** enabled if shown.
 
@@ -11,6 +11,12 @@ Open the game online once and wait for **Ready to play offline**. Its service wo
 The GitHub Pages workflow deploys the production build from this repository's `main` branch. The manifest, icons, and service worker support the `/phaser-snake/` subfolder. Local development does not register a service worker.
 
 Use Node.js 22 or newer. Run `npm ci`, `npm test`, and `npm run build-nolog`. For phone installation and offline browser checks, run `npx playwright install chromium` and `npm run test:pwa`. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed Chromium/Chrome executable if needed. The existing AI opponent, game modes, skins, and high scores are preserved.
+
+## Game menu
+
+The bottom tabs are **Settings**, **Home**, and **Skins**. Home starts a game and shows your current challenge. Settings groups speed, food, grid, rival difficulty, ghost replay, game modes, installation, and saved scores. Skins has all 13 styles, their live preview, and Classic color tints. Choices are saved on the device. The tabs disappear during a game and return afterward.
+
+The menu supports touch, keyboard navigation, small screens, and rotation. Skin previews and gameplay share their texture generator. Browser checks cover installation, offline starts, all skins, saved settings, and navigation.
 
 ---
 # Phaser Vite Template

@@ -38,8 +38,6 @@ function showInstallGuide() {
     });
     document.getElementById('install-guide-steps').replaceChildren(...steps);
     document.getElementById('install-guide-note').textContent = guide.note;
-    // A modal overlay should pause any game underneath it.
-    window.dispatchEvent(new Event('blur'));
     if (!dialog.open) dialog.showModal();
     return guide.steps.join(' ');
 }

@@ -50,9 +50,9 @@ const StartGame = (parent) => {
             }
             if (next.width !== game.scale.width || next.height !== game.scale.height) {
                 game.scale.setGameSize(next.width, next.height);
-                // Restart whichever menu scene is showing so it re-lays-out.
+                // The HTML menu reflows without restarting or losing its selected tab.
                 const key = active[0];
-                if (key) {
+                if (key && key !== 'TitleScreen') {
                     game.scene.stop(key);
                     game.scene.start(key);
                 }

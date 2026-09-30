@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#388e3c" />
+    <meta name="theme-color" content="#14261b" />
     <meta name="description" content="Play Snake with touch controls, AI rivals, and custom skins, online or offline." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -16,21 +16,69 @@
 </head>
 <body>
     <div id="app"><div id="game-container"></div></div>
-    <div id="pwa-tools" class="scene-hidden">
-        <span id="offline-status" role="status"></span>
-        <button id="install-button">Install game</button>
-    </div>
-    <aside id="update-notice" role="status" hidden>
-        <p>An update is ready. Updating starts a new game.</p>
-        <button id="update-button">Update now</button>
-        <button id="dismiss-update">Later</button>
-    </aside>
-    <dialog id="install-guide" aria-labelledby="install-guide-title" aria-describedby="install-guide-note">
-        <h2 id="install-guide-title">Install Snake</h2>
-        <ol id="install-guide-steps"></ol>
-        <p id="install-guide-note"></p>
-        <button id="install-guide-close" autofocus>Got it</button>
-    </dialog>
+    <main id="menu-shell" hidden>
+        <div id="menu-scroll">
+            <div class="menu-content">
+                <header class="menu-header">
+                    <span class="wordmark"><span class="brand-mark" aria-hidden="true">S</span> SNAKE</span>
+                    <button id="show-scores" class="quiet-button" aria-label="High scores"><span aria-hidden="true">♛</span> High scores</button>
+                </header>
+                <div class="page-heading"><p id="menu-eyebrow" class="eyebrow">ONE MORE ROUND</p><h1 id="menu-title">Ready, set, snake.</h1><p id="menu-description">A little strategy. A lot of apples.</p></div>
+                <figure class="preview-card">
+                    <canvas id="snake-preview" width="640" height="200" role="img" aria-label="Snake preview"></canvas>
+                    <figcaption><span><span class="live-dot" aria-hidden="true"></span><span id="preview-label">Your snake</span></span><span id="preview-detail">Classic</span></figcaption>
+                </figure>
+                <section id="panel-home" role="tabpanel" aria-labelledby="tab-home" tabindex="0">
+                    <button id="play-button" class="primary-button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg> Play</button>
+                    <p class="play-hint">Swipe to turn · Use arrow keys on a keyboard</p>
+                    <div class="run-summary"><div><span class="eyebrow">YOUR CHALLENGE</span><strong id="home-challenge">Medium rival</strong><span id="home-setup">Speed 5 · Auto grid</span></div><div class="best-score"><span class="eyebrow">PERSONAL BEST</span><strong id="home-best">0</strong><span>across all setups</span></div></div>
+                    <div id="pwa-tools"><button id="install-button" class="secondary-button">Install game</button><span id="offline-status" role="status"></span></div>
+                </section>
+                <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0" hidden>
+                    <section class="settings-group" aria-labelledby="gameplay-heading">
+                        <h2 id="gameplay-heading">Gameplay</h2>
+                        <div class="setting-row"><div><label for="speed-value">Speed</label><p>Find your pace, from 1 to 20.</p></div><div class="stepper"><button id="speed-down" aria-label="Decrease speed">−</button><output id="speed-value" aria-live="polite">5</output><button id="speed-up" aria-label="Increase speed">+</button></div></div>
+                        <div class="setting-row"><label for="food-select">Food</label><select id="food-select" data-preference="foodType"><option value="apple">Apple</option><option value="banana">Banana</option><option value="eggplant">Eggplant</option><option value="jerry">Jerry</option><option value="sushi">Sushi</option></select></div>
+                        <div class="setting-row"><div><label for="grid-select">Grid size</label><p>Auto fits your screen.</p></div><select id="grid-select" data-preference="gridSize"><option value="auto">Auto</option><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></div>
+                    </section>
+                    <section class="settings-group" aria-labelledby="challenge-heading">
+                        <h2 id="challenge-heading">Challenge</h2>
+                        <label class="setting-row toggle-row"><span><strong>AI opponent</strong><small>Race a rival snake for food.</small></span><input type="checkbox" role="switch" data-preference="rivalEnabled" /></label>
+                        <div class="setting-row"><label for="difficulty-select">Difficulty</label><select id="difficulty-select" data-preference="rivalDifficulty"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option><option value="extraHard">Extra Hard</option></select></div>
+                        <label class="setting-row toggle-row"><span><strong>Ghost replay</strong><small>See the path from your best run.</small></span><input type="checkbox" role="switch" data-preference="ghostEnabled" /></label>
+                    </section>
+                    <section class="settings-group" aria-labelledby="modes-heading">
+                        <h2 id="modes-heading">Game modes</h2>
+                        <label class="setting-row toggle-row"><span><strong>Spikes</strong><small>Dodge obstacles on the board.</small></span><input type="checkbox" role="switch" data-preference="modeSpikes" /></label>
+                        <label class="setting-row toggle-row"><span><strong>Teleport</strong><small>Find a shortcut through portals.</small></span><input type="checkbox" role="switch" data-preference="modeTeleport" /></label>
+                        <label class="setting-row toggle-row"><span><strong>Color shuffle</strong><small>A fresh board color with each bite.</small></span><input type="checkbox" role="switch" data-preference="modeColorShuffle" /></label>
+                    </section>
+                    <section class="settings-group" aria-labelledby="app-heading">
+                        <h2 id="app-heading">App &amp; saved games</h2>
+                        <div class="setting-row app-row"><div><strong>Take Snake with you</strong><p>Add it to your home screen.</p></div><button id="settings-install" class="secondary-button">Install game</button></div>
+                        <div class="setting-row app-row"><div><strong>High scores</strong><p>Clears your scores and ghost replay.</p></div><button id="clear-scores" class="text-button danger-button">Clear high scores</button></div>
+                        <p id="settings-message" role="status"></p>
+                    </section>
+                    <footer class="creator-links"><p>More by this creator</p><a href="https://lucaessey.github.io/wordventure/" target="_blank" rel="noopener noreferrer">Wordventure ↗</a><a href="https://lucaessey.github.io/Boggle/" target="_blank" rel="noopener noreferrer">Boggle ↗</a></footer>
+                </section>
+                <section id="panel-skins" role="tabpanel" aria-labelledby="tab-skins" tabindex="0" hidden>
+                    <div class="section-heading"><h2>Choose your snake</h2><span>13 skins · All unlocked</span></div>
+                    <div id="skin-grid" class="skin-grid" role="group" aria-label="Snake skins"></div>
+                    <section class="settings-group color-group" aria-labelledby="color-heading"><div class="section-heading"><h2 id="color-heading">Classic colors</h2><span id="color-name">Classic</span></div><p id="color-help">Choose a tint for the Classic skin.</p><div id="color-grid" class="color-grid" role="group" aria-label="Classic snake colors" aria-describedby="color-help"></div></section>
+                </section>
+            </div>
+        </div>
+        <nav class="bottom-nav" aria-label="Main navigation">
+            <div role="tablist" aria-label="Game menu">
+                <button id="tab-settings" role="tab" aria-controls="panel-settings" aria-selected="false" tabindex="-1"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 3-.6 2.2-2 .9-2-.6-2 3.5 1.6 1.6v2.8L2.4 15l2 3.5 2-.6 2 .9L9 21h6l.6-2.2 2-.9 2 .6 2-3.5-1.6-1.6v-2.8L21.6 9l-2-3.5-2 .6-2-.9L15 3z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span></button>
+                <button id="tab-home" role="tab" aria-controls="panel-home" aria-selected="true" tabindex="0"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
+                <button id="tab-skins" role="tab" aria-controls="panel-skins" aria-selected="false" tabindex="-1"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 19h11a4 4 0 0 0 0-8H8a4 4 0 0 1 0-8h7a4 4 0 0 1 4 4v1h-7V7H8m-5 8h11"/><circle cx="17" cy="5.5" r=".5" fill="currentColor" stroke="none"/><path d="M19 7h3"/></svg><span>Skins</span></button>
+            </div>
+        </nav>
+    </main>
+    <aside id="update-notice" role="status" hidden><p>An update is ready. Updating starts a new game.</p><button id="update-button">Update now</button><button id="dismiss-update">Later</button></aside>
+    <dialog id="scores-dialog" aria-labelledby="scores-title"><h2 id="scores-title">High scores</h2><p class="muted">Your best run for each game setup.</p><div id="scores-list"></div><button id="scores-close" class="secondary-button" autofocus>Done</button></dialog>
+    <dialog id="install-guide" aria-labelledby="install-guide-title" aria-describedby="install-guide-note"><h2 id="install-guide-title">Install Snake</h2><ol id="install-guide-steps"></ol><p id="install-guide-note"></p><button id="install-guide-close" autofocus>Got it</button></dialog>
     <noscript>Enable JavaScript to play Snake.</noscript>
     <script type="module" src="/src/main.js"></script>
 </body>

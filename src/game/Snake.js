@@ -1,4 +1,4 @@
-import { Scene } from 'phaser';
+import { safeGetItem } from './storage';
 
 // Selectable snake colors. Applied as a tint over the green sprite art;
 // index 0 ('Classic') uses white, which leaves the original art untouched.
@@ -26,13 +26,13 @@ export class Snake {
         this.scene = scene;
         this.tileSize = tileSize;
 
-        const speedInTiles = parseInt(localStorage.getItem('snakeSpeed')) || 5;
+        const speedInTiles = parseInt(safeGetItem('snakeSpeed')) || 5;
         this.speed = speedInTiles * this.tileSize; // Pixels per second
 
         if (options.color !== undefined) {
             this.color = options.color;
         } else {
-            const colorIndex = parseInt(localStorage.getItem('snakeColorIndex')) || 0;
+            const colorIndex = parseInt(safeGetItem('snakeColorIndex')) || 0;
             this.color = (SNAKE_COLORS[colorIndex] || SNAKE_COLORS[0]).tint;
         }
 
